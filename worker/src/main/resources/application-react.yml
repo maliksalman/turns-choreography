@@ -1,0 +1,12 @@
+spring:
+  main:
+    web-application-type: none
+  cloud:
+    stream:
+      default:
+        group: react
+      bindings:
+        processor-in-0:
+          destination: react-requested
+        processor-out-0:
+          destination: react-completed

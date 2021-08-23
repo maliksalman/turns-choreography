@@ -1,0 +1,18 @@
+spring:
+  cloud:
+    function:
+      definition: breathe;act;react;think;move;turn
+    stream:
+      bindings:
+        breathe-in-0:
+          destination: breathe-completed
+        act-in-0:
+          destination: act-completed
+        react-in-0:
+          destination: react-completed
+        think-in-0:
+          destination: think-completed
+        move-in-0:
+          destination: move-completed
+        turn-in-0:
+          destination: turn-completed

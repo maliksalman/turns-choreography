@@ -1,0 +1,12 @@
+spring:
+  main:
+    web-application-type: none
+  cloud:
+    stream:
+      default:
+        group: think
+      bindings:
+        processor-in-0:
+          destination: think-requested
+        processor-out-0:
+          destination: think-completed
