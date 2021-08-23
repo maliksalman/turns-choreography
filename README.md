@@ -1,6 +1,6 @@
 # turns-choreography
 
-This project shows how we can use messaging based choregraphy with spring-boot microservices. There is one choreographer service and 4 worker services. 
+This project shows how we can use messaging based choreography with spring-boot microservices. There is one choreographer service and 4 worker services. 
 
 The choreographer is contact via synchronous REST API by a "player" to take a "turn". The turn can consist of one or more "moves". The moves within a turn have to be performed in the same order as specified in the request. There is a timestamp associated with each turn. Each turn for a player have to be performed in the order of that timestamp.
 

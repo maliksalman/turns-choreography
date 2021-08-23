@@ -16,7 +16,8 @@ public class TurnResponse {
 
     String turnId;
     String playerId;
-    OffsetDateTime time;
+    OffsetDateTime startTime;
+    OffsetDateTime finishTime;
 
     boolean timeout;
     List<Move> moves;
