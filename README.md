@@ -16,4 +16,21 @@ docker run --rm -d -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 
 The username/password to access this RabbitMQ dashboard instance would be `guest`/`guest`
 
+### Start the services
 
+Choreographer:
+
+```bash
+cd choreographer
+./gradlew bootRun
+```
+
+Workers:
+
+```bash
+cd worker
+SPRING_PROFILES_ACTIVE=breathe ./gradlew bootRun
+SPRING_PROFILES_ACTIVE=think ./gradlew bootRun
+SPRING_PROFILES_ACTIVE=act ./gradlew bootRun
+SPRING_PROFILES_ACTIVE=react ./gradlew bootRun
+```
