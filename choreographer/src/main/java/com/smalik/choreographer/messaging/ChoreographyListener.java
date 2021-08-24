@@ -16,14 +16,14 @@ public class ChoreographyListener {
     @Bean
     public Consumer<MoveStepResponse> breathe() {
         return resp -> {
-            choreographer.handleMoveStepCompleted(resp.getTurnId(), resp.getMoveId(), "breathe", resp.getStatus());
+            choreographer.handleMoveStepCompleted(resp.getTurnId(), resp.getMoveId(), "breathe", resp.isFailed());
         };
     }
 
     @Bean
     public Consumer<MoveStepResponse> think() {
         return resp -> {
-            choreographer.handleMoveStepCompleted(resp.getTurnId(), resp.getMoveId(), "think", resp.getStatus());
+            choreographer.handleMoveStepCompleted(resp.getTurnId(), resp.getMoveId(), "think", resp.isFailed());
         };
     }
 
@@ -31,14 +31,14 @@ public class ChoreographyListener {
     @Bean
     public Consumer<MoveStepResponse> act() {
         return resp -> {
-            choreographer.handleMoveStepCompleted(resp.getTurnId(), resp.getMoveId(), "act", resp.getStatus());
+            choreographer.handleMoveStepCompleted(resp.getTurnId(), resp.getMoveId(), "act", resp.isFailed());
         };
     }
 
     @Bean
     public Consumer<MoveStepResponse> react() {
         return resp -> {
-            choreographer.handleMoveStepCompleted(resp.getTurnId(), resp.getMoveId(), "react", resp.getStatus());
+            choreographer.handleMoveStepCompleted(resp.getTurnId(), resp.getMoveId(), "react", resp.isFailed());
         };
     }
 

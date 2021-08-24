@@ -21,11 +21,7 @@ public class TurnsController {
             request.setTime(OffsetDateTime.now());
         }
         return service.turn(request)
-                .timeout(Duration.ofSeconds(30), Mono.just(TurnResponse.builder()
-                        .turnId(request.getTurnId())
-                        .playerId(request.getPlayerId())
-                        .finishTime(OffsetDateTime.now())
-                        .timeout(true)
-                        .build()));
+                .timeout(Duration.ofMillis(3))
+                .onErrorResume(throwable -> service.turnTimedOut(request));
     }
 }

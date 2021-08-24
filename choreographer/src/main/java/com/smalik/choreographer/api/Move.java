@@ -16,12 +16,14 @@ import java.util.Map;
 public class Move {
 
     public static final List<String> STEPS = List.of("breathe", "think", "act", "react");
+    public enum Status { NONE, REQUESTED, DONE }
 
     String turnId;
     String playerId;
     String moveId;
     String type;
     int quantity;
+    Status status;
 
     Map<String, StepStatus> statuses;
 
@@ -31,9 +33,9 @@ public class Move {
     @Builder
     public static class StepStatus {
         String step;
-        boolean complete;
+        boolean failed;
         OffsetDateTime startTime;
         OffsetDateTime finishTime;
-        String status;
+        Status status;
     }
 }

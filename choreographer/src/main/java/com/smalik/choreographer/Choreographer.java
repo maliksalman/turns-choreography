@@ -12,6 +12,7 @@ import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,19 +48,12 @@ public class Choreographer {
         startProcessingMove(request, mr);
     }
 
+    public TurnResponse turnTimedOut(TurnRequest request) {
+        return generateTurnResponse(request, true);
+    }
+
     private void startProcessingMove(TurnRequest request, TurnRequest.MoveRequest mr) {
-        Move move = Move.builder()
-                .turnId(request.getTurnId())
-                .playerId(request.getPlayerId())
-                .moveId(mr.getMoveId())
-                .type(mr.getType())
-                .quantity(mr.getPlaces())
-                .statuses(Move.STEPS.stream()
-                        .map(name -> Move.StepStatus.builder()
-                                .step(name)
-                                .build())
-                        .collect(Collectors.toMap(s -> s.getStep(), s -> s)))
-                .build();
+        Move move = toMoveFromRequest(request, mr, Move.Status.REQUESTED);
 
         // save the move
         database.addMove(move);
@@ -68,21 +62,38 @@ public class Choreographer {
         sendMoveStepRequestedEvent(Move.STEPS.get(0), move);
     }
 
-    public void handleMoveStepCompleted(String turnId, String moveId, String step, String status) {
+    private Move toMoveFromRequest(TurnRequest request, TurnRequest.MoveRequest mr, Move.Status initialMoveStatus) {
+        return Move.builder()
+                .turnId(request.getTurnId())
+                .playerId(request.getPlayerId())
+                .moveId(mr.getMoveId())
+                .type(mr.getType())
+                .quantity(mr.getPlaces())
+                .status(initialMoveStatus)
+                .statuses(Move.STEPS.stream()
+                        .map(name -> Move.StepStatus.builder()
+                                .step(name)
+                                .status(Move.Status.NONE)
+                                .build())
+                        .collect(Collectors.toMap(s -> s.getStep(), s -> s)))
+                .build();
+    }
+
+    public void handleMoveStepCompleted(String turnId, String moveId, String step, boolean failed) {
         Move move = database.findMove(moveId);
         if (move != null) {
             log.info("Handling move step completed: Turn={}, Move={}, Step={}", turnId, moveId, step);
             Move.StepStatus stepStatus = move.getStatuses().get(step);
             if (stepStatus != null) {
-                stepStatus.setStatus(status);
-                stepStatus.setComplete(true);
+                stepStatus.setStatus(Move.Status.DONE);
+                stepStatus.setFailed(failed);
                 stepStatus.setFinishTime(OffsetDateTime.now());
             }
 
-            boolean moveComplete = move.getStatuses().values().stream()
-                    .allMatch(s -> s.isComplete());
+            boolean moveDone = move.getStatuses().values().stream()
+                    .allMatch(s -> s.getStatus() == Move.Status.DONE);
 
-            if (!moveComplete) {
+            if (!moveDone) {
                 // find the next step in this move and request it
                 String nextStep = Move.STEPS.get(Move.STEPS.indexOf(step) + 1);
                 sendMoveStepRequestedEvent(nextStep, move);
@@ -97,6 +108,7 @@ public class Choreographer {
         Move move = database.findMove(moveId);
         if (move != null) {
             log.info("Handling move completed: Turn={}, Move={}", turnId, moveId);
+            move.setStatus(Move.Status.DONE);
 
             // find the next move in the turn
             TurnRequest request = database.findInProgressRequest(turnId);
@@ -115,23 +127,33 @@ public class Choreographer {
 
             } else {
                 // if this was last move, turn is complete
-                service.registerResponse(TurnResponse.builder()
-                        .playerId(request.getPlayerId())
-                        .turnId(request.getTurnId())
-                        .startTime(request.getTime())
-                        .finishTime(OffsetDateTime.now())
-                        .moves(request.getMoves().stream()
-                                .map(mr -> database.findMove(mr.getMoveId()))
-                                .collect(Collectors.toList()))
-                        .build());
-
-                // clean up database
-                database.cleanup(request);
-
-                // lets everybody know turn is complete
-                sendTurnCompletedEvent(request.getTurnId(), request.getPlayerId());
+                TurnResponse turnResponse = generateTurnResponse(request, false);
+                service.registerResponse(turnResponse);
             }
         }
+    }
+
+    private TurnResponse generateTurnResponse(TurnRequest request, boolean timeout) {
+        TurnResponse response = TurnResponse.builder()
+                .playerId(request.getPlayerId())
+                .turnId(request.getTurnId())
+                .startTime(request.getTime())
+                .finishTime(OffsetDateTime.now())
+                .timeout(timeout)
+                .moves(request.getMoves().stream()
+                        .map(mr -> Optional
+                                .ofNullable(database.findMove(mr.getMoveId()))
+                                .orElse(toMoveFromRequest(request, mr, Move.Status.NONE)))
+                        .collect(Collectors.toList()))
+                .build();
+
+        // clean up database
+        database.cleanup(request);
+
+        // lets everybody know turn is complete
+        sendTurnCompletedEvent(request.getTurnId(), request.getPlayerId());
+
+        return response;
     }
 
     private void sendTurnCompletedEvent(String turnId, String playerId) {
@@ -149,7 +171,10 @@ public class Choreographer {
     }
 
     private void sendMoveStepRequestedEvent(String step, Move move) {
+
         move.getStatuses().get(step).setStartTime(OffsetDateTime.now());
+        move.getStatuses().get(step).setStatus(Move.Status.REQUESTED);
+
         streamBridge.send(step + "-requested", MoveStepRequest.builder()
                 .moveId(move.getMoveId())
                 .playerId(move.getPlayerId())

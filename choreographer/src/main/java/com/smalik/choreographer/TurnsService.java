@@ -35,7 +35,10 @@ public class TurnsService {
         return responses
             .filter(resp -> req.getTurnId().equals(resp.getTurnId()))
             .next();
+    }
 
+    public Mono<TurnResponse> turnTimedOut(TurnRequest request) {
+        return Mono.just(choreographer.turnTimedOut(request));
     }
 
     public void registerResponse(TurnResponse response) {

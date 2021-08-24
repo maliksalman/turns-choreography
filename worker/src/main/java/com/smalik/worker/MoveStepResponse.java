@@ -1,6 +1,5 @@
 package com.smalik.worker;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +14,7 @@ public class MoveStepResponse {
     String turnId;
     String playerId;
     String moveId;
-    String step;
-    String status;
+
+    boolean failed;
 
 }

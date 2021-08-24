@@ -15,7 +15,7 @@ public class MoveStepResponse {
     String turnId;
     String playerId;
     String moveId;
-    String step;
-    String status;
+
+    boolean failed;
 
 }

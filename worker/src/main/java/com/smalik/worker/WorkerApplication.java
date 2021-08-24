@@ -25,8 +25,7 @@ public class WorkerApplication {
 					.moveId(request.getMoveId())
 					.playerId(request.getPlayerId())
 					.turnId(request.getTurnId())
-					.step(request.getStep())
-					.status("DONE")
+					.failed(false)
 					.build();
 		};
 	}
