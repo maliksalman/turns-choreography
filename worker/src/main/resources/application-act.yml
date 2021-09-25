@@ -1,12 +1,3 @@
 spring:
-  main:
-    web-application-type: none
-  cloud:
-    stream:
-      default:
-        group: act
-      bindings:
-        processor-in-0:
-          destination: act-requested
-        processor-out-0:
-          destination: act-completed
+  application:
+    name: act

@@ -150,7 +150,7 @@ public class Choreographer {
         // clean up database
         database.cleanup(request);
 
-        // lets everybody know turn is complete
+        // let everybody know turn is complete
         sendTurnCompletedEvent(request.getTurnId(), request.getPlayerId());
 
         return response;
@@ -172,7 +172,9 @@ public class Choreographer {
 
     private void sendMoveStepRequestedEvent(String step, Move move) {
 
-        move.getStatuses().get(step).setStartTime(OffsetDateTime.now());
+
+        OffsetDateTime now = OffsetDateTime.now();
+        move.getStatuses().get(step).setStartTime(now);
         move.getStatuses().get(step).setStatus(Move.Status.REQUESTED);
 
         streamBridge.send(step + "-requested", MoveStepRequest.builder()
@@ -180,9 +182,9 @@ public class Choreographer {
                 .playerId(move.getPlayerId())
                 .turnId(move.getTurnId())
                 .step(step)
+                .time(now)
                 .build());
     }
-
 
     public void turnLater(TurnRequest request) {
         // TODO: add turn to a pending list - organize by player-id

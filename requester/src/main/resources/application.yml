@@ -1,0 +1,5 @@
+server:
+  port: 8585
+
+turnsapi:
+  endpoint: http://localhost:8080

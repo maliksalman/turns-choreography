@@ -19,13 +19,11 @@ repositories {
 }
 
 dependencies {
-	implementation platform('org.springframework.cloud:spring-cloud-dependencies:2020.0.3')
-
-	implementation 'org.springframework.boot:spring-boot-starter-actuator'
-	implementation 'io.micrometer:micrometer-registry-prometheus'
 
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	implementation 'org.springframework.cloud:spring-cloud-starter-stream-rabbit'
+
+	implementation 'org.springdoc:springdoc-openapi-webflux-ui:1.5.10'
+	implementation 'com.github.javafaker:javafaker:1.0.2'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
