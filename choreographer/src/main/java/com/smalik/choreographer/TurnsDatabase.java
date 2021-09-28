@@ -5,6 +5,7 @@ import com.smalik.choreographer.api.TurnRequest;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -28,12 +29,12 @@ public class TurnsDatabase {
         moves.put(move.getMoveId(), move);
     }
 
-    public TurnRequest findInProgressRequest(String turnId) {
-        return inProgressRequests.get(turnId);
+    public Optional<TurnRequest> findInProgressRequest(String turnId) {
+        return Optional.ofNullable(inProgressRequests.get(turnId));
     }
 
-    public Move findMove(String moveId) {
-        return moves.get(moveId);
+    public Optional<Move> findMove(String moveId) {
+        return Optional.ofNullable(moves.get(moveId));
     }
 
     public void cleanup(TurnRequest request) {

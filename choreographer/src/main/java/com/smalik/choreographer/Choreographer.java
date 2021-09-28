@@ -11,8 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -80,57 +80,64 @@ public class Choreographer {
     }
 
     public void handleMoveStepCompleted(String turnId, String moveId, String step, boolean failed) {
-        Move move = database.findMove(moveId);
-        if (move != null) {
-            log.info("Handling move step completed: Turn={}, Move={}, Step={}", turnId, moveId, step);
-            Move.StepStatus stepStatus = move.getStatuses().get(step);
-            if (stepStatus != null) {
-                stepStatus.setStatus(Move.Status.DONE);
-                stepStatus.setFailed(failed);
-                stepStatus.setFinishTime(OffsetDateTime.now());
-            }
+        database.findMove(moveId)
+                .map(move -> {
+                    Move.StepStatus stepStatus = move.getStatuses().get(step);
+                    stepStatus.setStatus(Move.Status.DONE);
+                    stepStatus.setFailed(failed);
+                    stepStatus.setFinishTime(OffsetDateTime.now());
+                    log.info("Handling move step completed: Turn={}, Move={}, Step={}, Time={}",
+                            turnId,
+                            moveId,
+                            step,
+                            Duration.between(stepStatus.getStartTime(), stepStatus.getFinishTime()).toMillis());
 
-            boolean moveDone = move.getStatuses().values().stream()
-                    .allMatch(s -> s.getStatus() == Move.Status.DONE);
+                    boolean moveDone = move.getStatuses().values().stream()
+                            .allMatch(s -> s.getStatus() == Move.Status.DONE);
 
-            if (!moveDone) {
-                // find the next step in this move and request it
-                String nextStep = Move.STEPS.get(Move.STEPS.indexOf(step) + 1);
-                sendMoveStepRequestedEvent(nextStep, move);
-            } else {
-                sendMoveCompletedEvent(move);
-            }
-        }
+                    if (!moveDone) {
+                        // find the next step in this move and request it
+                        String nextStep = Move.STEPS.get(Move.STEPS.indexOf(step) + 1);
+                        sendMoveStepRequestedEvent(nextStep, move);
+                    } else {
+                        sendMoveCompletedEvent(move);
+                    }
+                    return move;
+                });
     }
 
     public void handleMoveCompleted(String turnId, String moveId) {
+        database.findMove(moveId)
+                .map(move -> {
+                    log.info("Handling move completed: Turn={}, Move={}", turnId, moveId);
+                    move.setStatus(Move.Status.DONE);
 
-        Move move = database.findMove(moveId);
-        if (move != null) {
-            log.info("Handling move completed: Turn={}, Move={}", turnId, moveId);
-            move.setStatus(Move.Status.DONE);
+                    // find the next move in the turn
+                    database.findInProgressRequest(turnId)
+                            .map(request -> {
+                                TurnRequest.MoveRequest nextMoveRequest = null;
+                                for (int i = 0; i < request.getMoves().size(); i++) {
+                                    TurnRequest.MoveRequest mr = request.getMoves().get(i);
+                                    if (mr.getMoveId().equals(moveId) && (i + 1) < request.getMoves().size()) {
+                                        nextMoveRequest = request.getMoves().get(i + 1);
+                                        break;
+                                    }
+                                }
 
-            // find the next move in the turn
-            TurnRequest request = database.findInProgressRequest(turnId);
-            TurnRequest.MoveRequest nextMoveRequest = null;
-            for (int i = 0; i < request.getMoves().size(); i++) {
-                TurnRequest.MoveRequest mr = request.getMoves().get(i);
-                if (mr.getMoveId().equals(moveId) && (i+1) < request.getMoves().size()) {
-                    nextMoveRequest = request.getMoves().get(i+1);
-                    break;
-                }
-            }
+                                if (nextMoveRequest != null) {
+                                    // if next move found - start processing it
+                                    startProcessingMove(request, nextMoveRequest);
 
-            if (nextMoveRequest != null) {
-                // if next move found - start processing it
-                startProcessingMove(request, nextMoveRequest);
+                                } else {
+                                    // if this was last move, turn is complete
+                                    TurnResponse turnResponse = generateTurnResponse(request, false);
+                                    service.registerResponse(turnResponse);
+                                }
 
-            } else {
-                // if this was last move, turn is complete
-                TurnResponse turnResponse = generateTurnResponse(request, false);
-                service.registerResponse(turnResponse);
-            }
-        }
+                                return request;
+                            });
+                    return move;
+                });
     }
 
     private TurnResponse generateTurnResponse(TurnRequest request, boolean timeout) {
@@ -141,8 +148,8 @@ public class Choreographer {
                 .finishTime(OffsetDateTime.now())
                 .timeout(timeout)
                 .moves(request.getMoves().stream()
-                        .map(mr -> Optional
-                                .ofNullable(database.findMove(mr.getMoveId()))
+                        .map(mr -> database
+                                .findMove(mr.getMoveId())
                                 .orElse(toMoveFromRequest(request, mr, Move.Status.NONE)))
                         .collect(Collectors.toList()))
                 .build();
@@ -151,15 +158,16 @@ public class Choreographer {
         database.cleanup(request);
 
         // let everybody know turn is complete
-        sendTurnCompletedEvent(request.getTurnId(), request.getPlayerId());
+        sendTurnCompletedEvent(request.getTurnId(), request.getPlayerId(), timeout);
 
         return response;
     }
 
-    private void sendTurnCompletedEvent(String turnId, String playerId) {
+    private void sendTurnCompletedEvent(String turnId, String playerId, boolean timeout) {
         streamBridge.send("turn-completed", TurnCompleted.builder()
                 .turnId(turnId)
                 .playerId(playerId)
+                .timeout(timeout)
                 .build());
     }
 
@@ -172,12 +180,11 @@ public class Choreographer {
 
     private void sendMoveStepRequestedEvent(String step, Move move) {
 
-
         OffsetDateTime now = OffsetDateTime.now();
         move.getStatuses().get(step).setStartTime(now);
         move.getStatuses().get(step).setStatus(Move.Status.REQUESTED);
 
-        streamBridge.send(step + "-requested", MoveStepRequest.builder()
+        streamBridge.send(step + "-requested-out-0", MoveStepRequest.builder()
                 .moveId(move.getMoveId())
                 .playerId(move.getPlayerId())
                 .turnId(move.getTurnId())
@@ -190,8 +197,7 @@ public class Choreographer {
         // TODO: add turn to a pending list - organize by player-id
     }
 
-    public void handleTurnCompleted(String turnId, String playerId) {
-        // TODO: see if there are pending turns for this player - run them
-        log.info("Handling turn completed: Turn={}, Player={}", turnId, playerId);
+    public void handleTurnCompleted(String turnId, String playerId, boolean timeout) {
+        log.info("Handling turn completed: Turn={}, Player={}, Timeout={}", turnId, playerId, timeout);
     }
 }

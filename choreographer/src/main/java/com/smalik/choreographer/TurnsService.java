@@ -29,16 +29,16 @@ public class TurnsService {
     }
 
     public Mono<TurnResponse> turn(TurnRequest req) {
-
-        choreographer.turnNow(req);
-
-        return responses
-            .filter(resp -> req.getTurnId().equals(resp.getTurnId()))
-            .next();
+        return Mono
+                .fromRunnable(() -> choreographer.turnNow(req))
+                .then(responses
+                        .filter(resp -> req.getTurnId().equals(resp.getTurnId()))
+                        .next());
     }
 
     public Mono<TurnResponse> turnTimedOut(TurnRequest request) {
-        return Mono.just(choreographer.turnTimedOut(request));
+        return Mono
+                .fromCallable(() -> choreographer.turnTimedOut(request));
     }
 
     public void registerResponse(TurnResponse response) {

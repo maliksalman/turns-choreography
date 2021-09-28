@@ -15,7 +15,7 @@ import java.util.Map;
 @Builder
 public class Move {
 
-    public static final List<String> STEPS = List.of("breathe", "think", "act", "react");
+    public static final List<String> STEPS = List.of("think", "breathe", "act", "react");
     public enum Status { NONE, REQUESTED, DONE }
 
     String turnId;

@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class TurnCompleted {
     String turnId;
     String playerId;
+    boolean timeout;
 }

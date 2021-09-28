@@ -2,11 +2,14 @@ package com.smalik.choreographer.api;
 
 import com.smalik.choreographer.TurnsService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
-import java.time.OffsetDateTime;
 
 @RequiredArgsConstructor
 @RestController
@@ -16,12 +19,13 @@ public class TurnsController {
     private final TurnsService service;
 
     @PostMapping
-    public Mono<TurnResponse> turn(@RequestBody TurnRequest request, @RequestParam(name = "serverOverridesTime", required = false, defaultValue = "false") boolean serverOverridesTime) {
-        if (serverOverridesTime || request.getTime() == null) {
-            request.setTime(OffsetDateTime.now());
-        }
-        return service.turn(request)
-                .timeout(Duration.ofMillis(3))
-                .onErrorResume(throwable -> service.turnTimedOut(request));
+    public Mono<TurnResponse> turn(@RequestBody TurnRequest request) {
+        return service
+                .turn(request)
+                .subscribeOn(Schedulers.boundedElastic())
+                .timeout(
+                        Duration.ofSeconds(5),
+                        service.turnTimedOut(request),
+                        Schedulers.boundedElastic());
     }
 }

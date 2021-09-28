@@ -52,7 +52,7 @@ public class ChoreographyListener {
     @Bean
     public Consumer<TurnCompleted> turn() {
         return resp -> {
-            choreographer.handleTurnCompleted(resp.getTurnId(), resp.getPlayerId());
+            choreographer.handleTurnCompleted(resp.getTurnId(), resp.getPlayerId(), resp.isTimeout());
         };
     }
 }
