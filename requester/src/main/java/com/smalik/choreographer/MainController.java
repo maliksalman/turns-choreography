@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/requests")
@@ -16,7 +18,7 @@ public class MainController {
     private final WebClient webClient;
 
     @PostMapping
-    public void turn(@RequestBody Load request) {
+    public void turn(@RequestBody List<Load> request) {
         service.generateLoad(webClient, request);
     }
 }

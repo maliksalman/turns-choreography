@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class Load {
 
-    int players;
     int arrivalRate;
     int durationSeconds;
 

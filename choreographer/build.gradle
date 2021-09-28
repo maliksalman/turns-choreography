@@ -25,6 +25,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.springframework.cloud:spring-cloud-starter-stream-rabbit'
 
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+
 	implementation 'org.springdoc:springdoc-openapi-webflux-ui:1.5.10'
 
 	compileOnly 'org.projectlombok:lombok'

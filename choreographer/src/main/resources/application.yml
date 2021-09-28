@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: choreographer
   cloud:
     function:
       definition: breathe;act;react;think;move;turn
@@ -26,3 +28,16 @@ spring:
           destination: react-requested
         think-requested-out-0:
           destination: think-requested
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info,health,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+      instance: ${spring.application.name}-0

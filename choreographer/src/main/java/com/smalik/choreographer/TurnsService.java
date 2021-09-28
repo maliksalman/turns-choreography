@@ -2,46 +2,25 @@ package com.smalik.choreographer;
 
 import com.smalik.choreographer.api.TurnRequest;
 import com.smalik.choreographer.api.TurnResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 
-import javax.annotation.PostConstruct;
-
 @Service
+@RequiredArgsConstructor
 public class TurnsService {
 
-    private Choreographer choreographer;
-
-    private Flux<TurnResponse> responses;
-    private FluxSink<TurnResponse> sink;
-
-    @Autowired
-    public void setChoreographer(Choreographer choreographer) {
-        this.choreographer = choreographer;
-    }
-
-    @PostConstruct
-    public void init() {
-        this.responses = Flux.<TurnResponse>create(s -> this.sink = s);
-    }
+    private final TurnChoreographer turnChoreographer;
+    private final TurnResponseSink sink;
 
     public Mono<TurnResponse> turn(TurnRequest req) {
         return Mono
-                .fromRunnable(() -> choreographer.turnNow(req))
-                .then(responses
-                        .filter(resp -> req.getTurnId().equals(resp.getTurnId()))
-                        .next());
+                .fromRunnable(() -> turnChoreographer.turnNow(req))
+                .then(sink.findResponse(req.getTurnId()));
     }
 
     public Mono<TurnResponse> turnTimedOut(TurnRequest request) {
         return Mono
-                .fromCallable(() -> choreographer.turnTimedOut(request));
-    }
-
-    public void registerResponse(TurnResponse response) {
-        sink.next(response);
+                .fromCallable(() -> turnChoreographer.turnTimedOut(request));
     }
 }

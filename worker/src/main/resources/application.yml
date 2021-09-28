@@ -12,18 +12,3 @@ spring:
           destination: ${spring.application.name}-requested
         processor-out-0:
           destination: ${spring.application.name}-completed
-
-management:
-  endpoints:
-    metrics:
-      enabled: true
-    web:
-      exposure:
-        include: info,health,metrics,prometheus
-  metrics:
-    export:
-      prometheus:
-        enabled: true
-    tags:
-      application: ${spring.application.name}
-

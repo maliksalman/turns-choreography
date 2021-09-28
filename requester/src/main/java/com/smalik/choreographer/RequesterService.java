@@ -17,6 +17,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,16 +26,19 @@ public class RequesterService {
 
     private final Faker faker = Faker.instance();
 
-    public void generateLoad(WebClient webClient, Load load) {
+    public void generateLoad(WebClient webClient, List<Load> loadRequests) {
         AtomicInteger counter = new AtomicInteger(0);
-        Flux.range(1, load.getDurationSeconds())
-                .limitRate(1)
-                .delayElements(Duration.ofSeconds(1))
-                .map(idx -> Flux.range(1, load.getArrivalRate()))
-                .flatMap(idx -> idx)
-                .map(idx -> generateRequest())
-                .map(req -> makeRequest(webClient, req))
-                .flatMap(resp -> resp)
+        List<Flux<TurnResponse>> fluxes = loadRequests.stream()
+                .map(load -> Flux.range(1, load.getDurationSeconds())
+                        .limitRate(1)
+                        .delayElements(Duration.ofSeconds(1))
+                        .map(idx -> Flux.range(1, load.getArrivalRate()))
+                        .flatMap(idx -> idx)
+                        .map(idx -> generateRequest())
+                        .map(req -> makeRequest(webClient, req))
+                        .flatMap(resp -> resp))
+                .collect(Collectors.toList());
+        Flux.concat(fluxes)
                 .subscribe(resp -> collectStats(counter, resp));
     }
 
