@@ -1,0 +1,34 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api
+  cloud:
+    function:
+      definition: moveCompleted;turnCompleted
+    stream:
+      bindings:
+
+        moveCompleted-in-0:
+          destination: move-completed
+        turnCompleted-in-0:
+          destination: turn-completed
+
+        moveRequested-out-0:
+          destination: move-requested
+        turnCompleted-out-0:
+          destination: turn-completed
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info,health,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+      instance: ${spring.application.name}-0

@@ -1,5 +1,4 @@
-package com.smalik.choreographer.messaging;
-
+package com.smalik.choreographer;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,12 +11,11 @@ import java.time.OffsetDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class MoveStepResponse {
+public class MoveStepRequest {
 
     String turnId;
     String playerId;
     String moveId;
-
-    boolean failed;
+    String step;
     OffsetDateTime time;
 }

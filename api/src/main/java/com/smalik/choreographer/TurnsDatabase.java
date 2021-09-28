@@ -25,7 +25,7 @@ public class TurnsDatabase {
         inProgressRequests.put(request.getTurnId(), request);
     }
 
-    public void addMove(Move move) {
+    public void addUpdateMove(Move move) {
         moves.put(move.getMoveId(), move);
     }
 

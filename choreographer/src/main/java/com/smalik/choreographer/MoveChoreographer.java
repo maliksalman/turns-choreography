@@ -1,9 +1,5 @@
 package com.smalik.choreographer;
 
-import com.smalik.choreographer.api.Move;
-import com.smalik.choreographer.api.TurnRequest;
-import com.smalik.choreographer.messaging.MoveCompleted;
-import com.smalik.choreographer.messaging.MoveStepRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.function.StreamBridge;
@@ -18,7 +14,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MoveChoreographer {
 
-    private final TurnsDatabase database;
+    private final MovesDatabase database;
     private final StreamBridge streamBridge;
 
     public void handleMoveStepCompleted(String turnId, String moveId, String step, boolean failed) {
@@ -42,6 +38,7 @@ public class MoveChoreographer {
                         String nextStep = Move.STEPS.get(Move.STEPS.indexOf(step) + 1);
                         sendMoveStepRequestedEvent(nextStep, move);
                     } else {
+                        move.setStatus(Move.Status.DONE);
                         sendMoveCompletedEvent(move);
                     }
                     return move;
@@ -49,37 +46,22 @@ public class MoveChoreographer {
     }
 
     private void sendMoveCompletedEvent(Move move) {
-        streamBridge.send("move-completed", MoveCompleted.builder()
-                .turnId(move.getTurnId())
-                .moveId(move.getMoveId())
-                .build());
+        streamBridge.send("move-completed-out-0", move);
+        database.removeMove(move.moveId);
     }
 
-    public void startProcessingMove(TurnRequest request, TurnRequest.MoveRequest mr) {
-        Move move = toMoveFromRequest(request, mr, Move.Status.REQUESTED);
-
+    public void startProcessingMove(Move move) {
         // save the move
+        move.setStatuses(Move.STEPS.stream()
+                .map(name -> Move.StepStatus.builder()
+                        .step(name)
+                        .status(Move.Status.NONE)
+                        .build())
+                .collect(Collectors.toMap(s -> s.getStep(), s -> s)));
         database.addMove(move);
 
         // send out the first message here
-        sendMoveStepRequestedEvent(Move.STEPS.get(0), move);
-    }
-
-    public Move toMoveFromRequest(TurnRequest request, TurnRequest.MoveRequest mr, Move.Status initialMoveStatus) {
-        return Move.builder()
-                .turnId(request.getTurnId())
-                .playerId(request.getPlayerId())
-                .moveId(mr.getMoveId())
-                .type(mr.getType())
-                .quantity(mr.getPlaces())
-                .status(initialMoveStatus)
-                .statuses(Move.STEPS.stream()
-                        .map(name -> Move.StepStatus.builder()
-                                .step(name)
-                                .status(Move.Status.NONE)
-                                .build())
-                        .collect(Collectors.toMap(s -> s.getStep(), s -> s)))
-                .build();
+         sendMoveStepRequestedEvent(Move.STEPS.get(0), move);
     }
 
     private void sendMoveStepRequestedEvent(String step, Move move) {

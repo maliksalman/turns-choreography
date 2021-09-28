@@ -1,16 +1,23 @@
-package com.smalik.choreographer.messaging;
+package com.smalik.choreographer;
+
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.OffsetDateTime;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class TurnCompleted {
+public class MoveStepResponse {
+
     String turnId;
     String playerId;
-    boolean timeout;
+    String moveId;
+
+    boolean failed;
+    OffsetDateTime time;
 }

@@ -1,4 +1,4 @@
-package com.smalik.choreographer.messaging;
+package com.smalik.choreographer;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class MoveCompleted {
-
+public class TurnCompleted {
     String turnId;
-    String moveId;
+    String playerId;
+    boolean timeout;
 }

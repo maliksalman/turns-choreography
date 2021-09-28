@@ -3,7 +3,6 @@ package com.smalik.choreographer;
 import com.smalik.choreographer.api.Move;
 import com.smalik.choreographer.api.TurnRequest;
 import com.smalik.choreographer.api.TurnResponse;
-import com.smalik.choreographer.messaging.TurnCompleted;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.function.StreamBridge;
@@ -19,7 +18,6 @@ public class TurnChoreographer {
 
     private final TurnsDatabase database;
     private final StreamBridge streamBridge;
-    private final MoveChoreographer moveChoreographer;
     private final TurnResponseSink sink;
 
     public void turnNow(TurnRequest request) {
@@ -29,42 +27,38 @@ public class TurnChoreographer {
 
         // process the first move's first step
         TurnRequest.MoveRequest mr = request.getMoves().get(0);
-        moveChoreographer.startProcessingMove(request, mr);
+        sendMoveRequestedEvent(request, mr);
     }
 
     public TurnResponse turnTimedOut(TurnRequest request) {
         return generateTurnResponse(request, true);
     }
 
-    public void handleMoveCompleted(String turnId, String moveId) {
-        database.findMove(moveId)
-                .map(move -> {
-                    log.info("Handling move completed: Turn={}, Move={}", turnId, moveId);
-                    move.setStatus(Move.Status.DONE);
+    public void handleMoveCompleted(Move move) {
+        log.info("Handling move completed: Turn={}, Move={}", move.getTurnId(), move.getMoveId());
+        database.addUpdateMove(move);
 
-                    // find the next move in the turn
-                    database.findInProgressRequest(turnId)
-                            .map(request -> {
-                                TurnRequest.MoveRequest nextMoveRequest = null;
-                                for (int i = 0; i < request.getMoves().size(); i++) {
-                                    TurnRequest.MoveRequest mr = request.getMoves().get(i);
-                                    if (mr.getMoveId().equals(moveId) && (i + 1) < request.getMoves().size()) {
-                                        nextMoveRequest = request.getMoves().get(i + 1);
-                                        break;
-                                    }
-                                }
+        // find the next move in the turn
+        database.findInProgressRequest(move.getTurnId())
+                .map(request -> {
+                    TurnRequest.MoveRequest nextMoveRequest = null;
+                    for (int i = 0; i < request.getMoves().size(); i++) {
+                        TurnRequest.MoveRequest mr = request.getMoves().get(i);
+                        if (mr.getMoveId().equals(move.getMoveId()) && (i + 1) < request.getMoves().size()) {
+                            nextMoveRequest = request.getMoves().get(i + 1);
+                            break;
+                        }
+                    }
 
-                                if (nextMoveRequest != null) {
-                                    // if next move found - start processing it
-                                    moveChoreographer.startProcessingMove(request, nextMoveRequest);
-                                } else {
-                                    // if this was last move, turn is complete
-                                    generateTurnResponse(request, false);
-                                }
+                    if (nextMoveRequest != null) {
+                        // if next move found - start processing it
+                        sendMoveRequestedEvent(request, nextMoveRequest);
+                    } else {
+                        // if this was last move, turn is complete
+                        generateTurnResponse(request, false);
+                    }
 
-                                return request;
-                            });
-                    return move;
+                    return request;
                 });
     }
 
@@ -78,7 +72,7 @@ public class TurnChoreographer {
                 .moves(request.getMoves().stream()
                         .map(mr -> database
                                 .findMove(mr.getMoveId())
-                                .orElse(moveChoreographer.toMoveFromRequest(request, mr, Move.Status.NONE)))
+                                .orElse(toMoveFromRequest(request, mr, Move.Status.NONE)))
                         .collect(Collectors.toList()))
                 .build();
 
@@ -99,11 +93,28 @@ public class TurnChoreographer {
     }
 
     private void sendTurnCompletedEvent(String turnId, String playerId, boolean timeout) {
-        streamBridge.send("turn-completed", TurnCompleted.builder()
+        streamBridge.send("turnCompleted-out-0", TurnCompleted.builder()
                 .turnId(turnId)
                 .playerId(playerId)
                 .timeout(timeout)
                 .build());
+    }
+
+    public Move toMoveFromRequest(TurnRequest request, TurnRequest.MoveRequest mr, Move.Status initialMoveStatus) {
+        return Move.builder()
+                .turnId(request.getTurnId())
+                .playerId(request.getPlayerId())
+                .moveId(mr.getMoveId())
+                .type(mr.getType())
+                .quantity(mr.getPlaces())
+                .status(initialMoveStatus)
+                .build();
+    }
+
+    private void sendMoveRequestedEvent(TurnRequest request, TurnRequest.MoveRequest moveRequest) {
+        Move move = toMoveFromRequest(request, moveRequest, Move.Status.REQUESTED);
+        database.addUpdateMove(move);
+        streamBridge.send("moveRequested-out-0", move);
     }
 
     public void turnLater(TurnRequest request) {

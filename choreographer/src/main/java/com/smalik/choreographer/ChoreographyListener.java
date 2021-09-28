@@ -1,7 +1,5 @@
-package com.smalik.choreographer.messaging;
+package com.smalik.choreographer;
 
-import com.smalik.choreographer.MoveChoreographer;
-import com.smalik.choreographer.TurnChoreographer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,8 +10,15 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public class ChoreographyListener {
 
-    private final TurnChoreographer turnChoreographer;
     private final MoveChoreographer moveChoreographer;
+
+    @Bean
+    public Consumer<Move> move() {
+        return move -> {
+            moveChoreographer.startProcessingMove(move);
+        };
+    }
+
 
     @Bean
     public Consumer<MoveStepResponse> breathe() {
@@ -41,20 +46,6 @@ public class ChoreographyListener {
     public Consumer<MoveStepResponse> react() {
         return resp -> {
             moveChoreographer.handleMoveStepCompleted(resp.getTurnId(), resp.getMoveId(), "react", resp.isFailed());
-        };
-    }
-
-    @Bean
-    public Consumer<MoveCompleted> move() {
-        return resp -> {
-            turnChoreographer.handleMoveCompleted(resp.getTurnId(), resp.getMoveId());
-        };
-    }
-
-    @Bean
-    public Consumer<TurnCompleted> turn() {
-        return resp -> {
-            turnChoreographer.handleTurnCompleted(resp.getTurnId(), resp.getPlayerId(), resp.isTimeout());
         };
     }
 }

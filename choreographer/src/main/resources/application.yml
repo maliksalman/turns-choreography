@@ -1,10 +1,15 @@
+server:
+  port: 8585
+
 spring:
   application:
     name: choreographer
   cloud:
     function:
-      definition: breathe;act;react;think;move;turn
+      definition: breathe;act;react;think;move
     stream:
+      default:
+        group: ${spring.application.name}
       bindings:
 
         breathe-in-0:
@@ -16,7 +21,7 @@ spring:
         think-in-0:
           destination: think-completed
         move-in-0:
-          destination: move-completed
+          destination: move-requested
         turn-in-0:
           destination: turn-completed
 
@@ -28,6 +33,8 @@ spring:
           destination: react-requested
         think-requested-out-0:
           destination: think-requested
+        move-completed-out-0:
+          destination: move-completed
 
 management:
   endpoints:
