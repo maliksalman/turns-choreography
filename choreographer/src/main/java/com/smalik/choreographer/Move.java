@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.RedisHash;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -13,14 +15,17 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+//@RedisHash("moves")
 public class Move {
 
     public static final List<String> STEPS = List.of("think", "breathe", "act", "react");
     public enum Status { NONE, REQUESTED, DONE }
 
+//    @Id
+    String moveId;
+
     String turnId;
     String playerId;
-    String moveId;
     String type;
     int quantity;
     Status status;

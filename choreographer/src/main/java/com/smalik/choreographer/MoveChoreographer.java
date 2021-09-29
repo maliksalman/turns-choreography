@@ -47,6 +47,8 @@ public class MoveChoreographer {
 
     private void sendMoveCompletedEvent(Move move) {
         streamBridge.send("move-completed-out-0", move);
+
+        // cleanup the move from the database, since we are done with it
         database.removeMove(move.moveId);
     }
 
@@ -58,7 +60,6 @@ public class MoveChoreographer {
                         .status(Move.Status.NONE)
                         .build())
                 .collect(Collectors.toMap(s -> s.getStep(), s -> s)));
-        database.addMove(move);
 
         // send out the first message here
          sendMoveStepRequestedEvent(Move.STEPS.get(0), move);
@@ -70,6 +71,10 @@ public class MoveChoreographer {
         move.getStatuses().get(step).setStartTime(now);
         move.getStatuses().get(step).setStatus(Move.Status.REQUESTED);
 
+        // save the current view of the move in the database
+        database.saveMove(move);
+
+        // send the message for requested the step
         streamBridge.send(step + "-requested-out-0", MoveStepRequest.builder()
                 .moveId(move.getMoveId())
                 .playerId(move.getPlayerId())
