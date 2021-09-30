@@ -1,9 +1,11 @@
 server:
-  port: 8080
+  port: 8484
 
 spring:
   application:
     name: api
+  jackson:
+    default-property-inclusion: non_null
   cloud:
     function:
       definition: moveCompleted;turnCompleted

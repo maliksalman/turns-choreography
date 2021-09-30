@@ -9,5 +9,5 @@ scrape_configs:
     honor_labels: true
     static_configs:
       - targets: 
-        - 'host.docker.internal:8080'
-
+        - 'host.docker.internal:8484'
+        - 'host.docker.internal:8585'

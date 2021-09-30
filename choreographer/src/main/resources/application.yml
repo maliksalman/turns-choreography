@@ -36,6 +36,9 @@ spring:
         move-completed-out-0:
           destination: move-completed
 
+  jackson:
+    default-property-inclusion: non_null
+
 management:
   endpoints:
     web:

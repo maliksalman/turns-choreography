@@ -2,4 +2,8 @@ server:
   port: 8585
 
 turnsapi:
-  endpoint: http://localhost:8080
+  endpoint: http://localhost:8484
+
+spring:
+  jackson:
+    default-property-inclusion: non_null

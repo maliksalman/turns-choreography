@@ -2,6 +2,7 @@ package com.smalik.choreographer.api;
 
 import com.smalik.choreographer.Metrics;
 import com.smalik.choreographer.TurnsService;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import javax.annotation.PostConstruct;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -21,6 +23,15 @@ public class TurnsController {
     private final TurnsService service;
     private final Metrics metrics;
 
+    private Timer timeoutTimer;
+    private Timer successTimer;
+
+    @PostConstruct
+    public void init() {
+        timeoutTimer = metrics.createTimer("turns.api", "timeout", Boolean.TRUE.toString());
+        successTimer = metrics.createTimer("turns.api", "timeout", Boolean.FALSE.toString());
+    }
+
     @PostMapping
     public Mono<TurnResponse> turn(@RequestBody TurnRequest request) {
         Instant instant = Instant.now();
@@ -31,8 +42,7 @@ public class TurnsController {
                         Duration.ofSeconds(5),
                         service.turnTimedOut(request),
                         Schedulers.boundedElastic())
-                .doOnNext(resp -> metrics
-                        .getTimer("turns.api", "timeout", String.valueOf(resp.isTimeout()))
+                .doOnNext(resp -> (resp.isTimeout() ? timeoutTimer : successTimer)
                         .record(Duration.between(instant, Instant.now())));
     }
 }

@@ -31,3 +31,24 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+
+  geode-locator:
+    image: apachegeode/geode:1.14.0
+    container_name: geode-locator
+    volumes:
+      - ./geode:/startup
+    ports:
+      - "1099:1099"
+      - "10334:10334"
+    command:
+      - /startup/locator.sh
+
+  geode-server:
+    image: apachegeode/geode:1.14.0
+    container_name: geode-server
+    volumes:
+      - ./geode:/startup
+    ports:
+      - "40404:40404"
+    command:
+      - /startup/server.sh
