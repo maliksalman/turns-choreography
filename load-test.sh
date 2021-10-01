@@ -27,7 +27,7 @@ LOAD='[
   },
   {
     "arrivalRate": 125,
-    "durationSeconds": 60
+    "durationSeconds": 120
   }
 ]'
 
