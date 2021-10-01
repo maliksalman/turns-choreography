@@ -292,51 +292,27 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.90, sum by (le) (rate(choreographer_moves_find_seconds_bucket[1m])))",
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(choreographer_moves_find_seconds_bucket[1m])))",
           "hide": false,
           "interval": "",
-          "legendFormat": "Find - P90",
+          "legendFormat": "Find",
           "refId": "D"
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(choreographer_moves_find_seconds_bucket[1m])))",
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(choreographer_moves_save_seconds_bucket[1m])))",
           "hide": false,
           "interval": "",
-          "legendFormat": "Find - P99",
-          "refId": "C"
-        },
-        {
-          "exemplar": true,
-          "expr": "histogram_quantile(0.90, sum by (le) (rate(choreographer_moves_save_seconds_bucket[1m])))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Save - P90",
+          "legendFormat": "Save",
           "refId": "F"
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(choreographer_moves_save_seconds_bucket[1m])))",
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(choreographer_moves_remove_seconds_bucket[1m])))",
           "hide": false,
           "interval": "",
-          "legendFormat": "Save - P99",
-          "refId": "A"
-        },
-        {
-          "exemplar": true,
-          "expr": "histogram_quantile(0.90, sum by (le) (rate(choreographer_moves_remove_seconds_bucket[1m])))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Remove - P90",
+          "legendFormat": "Remove",
           "refId": "E"
-        },
-        {
-          "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(choreographer_moves_remove_seconds_bucket[1m])))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Remove - P99",
-          "refId": "B"
         }
       ],
       "title": "DB Operations Times",
@@ -418,35 +394,10 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.75, sum by (le) (rate(turns_api_seconds_bucket{timeout=\"false\"}[1m])))",
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(turns_api_seconds_bucket{timeout=\"false\"}[1m])))",
           "interval": "",
-          "legendFormat": "P75",
+          "legendFormat": "Response Time",
           "refId": "A"
-        },
-        {
-          "exemplar": true,
-          "expr": "histogram_quantile(0.90, sum by (le) (rate(turns_api_seconds_bucket{timeout=\"false\"}[1m])))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "P90",
-          "refId": "C"
-        },
-        {
-          "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(turns_api_seconds_bucket{timeout=\"false\"}[1m])))",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "legendFormat": "P95",
-          "refId": "B"
-        },
-        {
-          "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(turns_api_seconds_bucket{timeout=\"false\"}[1m])))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "P99",
-          "refId": "D"
         }
       ],
       "title": "Successful Response Times",
@@ -506,98 +457,7 @@
           },
           "unit": "s"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Save - P99"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Find - P90"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "super-light-blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Remove - P99"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Find - P99"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Save - P90"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#C0D8FF",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Remove - P90"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "super-light-red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 12,
@@ -619,67 +479,35 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.90, sum by (le) (rate(choreographer_steps_breathe_seconds_bucket[1m])))",
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(choreographer_steps_breathe_seconds_bucket[1m])))",
           "hide": false,
           "interval": "",
-          "legendFormat": "Breathe - P90",
+          "legendFormat": "Breathe",
           "refId": "D"
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(choreographer_steps_breathe_seconds_bucket[1m])))",
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(choreographer_steps_think_seconds_bucket[1m])))",
           "hide": false,
           "interval": "",
-          "legendFormat": "Breathe - P99",
-          "refId": "A"
-        },
-        {
-          "exemplar": true,
-          "expr": "histogram_quantile(0.90, sum by (le) (rate(choreographer_steps_think_seconds_bucket[1m])))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Think - P90",
+          "legendFormat": "Think",
           "refId": "B"
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(choreographer_steps_think_seconds_bucket[1m])))",
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(choreographer_steps_act_seconds_bucket[1m])))",
           "hide": false,
           "interval": "",
-          "legendFormat": "Think - P99",
-          "refId": "C"
-        },
-        {
-          "exemplar": true,
-          "expr": "histogram_quantile(0.90, sum by (le) (rate(choreographer_steps_act_seconds_bucket[1m])))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Act - P90",
+          "legendFormat": "Act",
           "refId": "E"
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(choreographer_steps_act_seconds_bucket[1m])))",
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(choreographer_steps_react_seconds_bucket[1m])))",
           "hide": false,
           "interval": "",
-          "legendFormat": "Act - P99",
-          "refId": "F"
-        },
-        {
-          "exemplar": true,
-          "expr": "histogram_quantile(0.90, sum by (le) (rate(choreographer_steps_react_seconds_bucket[1m])))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "React - P90",
+          "legendFormat": "React",
           "refId": "G"
-        },
-        {
-          "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(choreographer_steps_react_seconds_bucket[1m])))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "React - P99",
-          "refId": "H"
         }
       ],
       "title": "Step Times",
@@ -691,7 +519,49 @@
   "style": "dark",
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": "99",
+          "value": "99"
+        },
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Percentile",
+        "multi": false,
+        "name": "percentile",
+        "options": [
+          {
+            "selected": false,
+            "text": "75",
+            "value": "75"
+          },
+          {
+            "selected": false,
+            "text": "90",
+            "value": "90"
+          },
+          {
+            "selected": false,
+            "text": "95",
+            "value": "95"
+          },
+          {
+            "selected": true,
+            "text": "99",
+            "value": "99"
+          }
+        ],
+        "query": "75,90,95,99",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
   },
   "time": {
     "from": "now-15m",
