@@ -1,0 +1,4 @@
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.geode.boot.autoconfigure.ClientCacheAutoConfiguration

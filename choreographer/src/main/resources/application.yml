@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: choreographer
+  autoconfigure:
+    exclude:
+      - org.redisson.spring.starter.RedissonAutoConfiguration
+      - org.springframework.geode.boot.autoconfigure.ClientCacheAutoConfiguration
   cloud:
     function:
       definition: breathe;act;react;think;move
