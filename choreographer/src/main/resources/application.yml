@@ -12,6 +12,7 @@ spring:
     function:
       definition: breathe;act;react;think;move
     stream:
+      default-binder: rabbit
       default:
         group: ${spring.application.name}
       bindings:

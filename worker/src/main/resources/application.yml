@@ -5,6 +5,7 @@ spring:
     function:
       definition: processor
     stream:
+      default-binder: rabbit
       default:
         group: ${spring.application.name}
       bindings:

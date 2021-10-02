@@ -10,6 +10,7 @@ spring:
     function:
       definition: moveCompleted;turnCompleted
     stream:
+      default-binder: rabbit
       bindings:
 
         moveCompleted-in-0:
