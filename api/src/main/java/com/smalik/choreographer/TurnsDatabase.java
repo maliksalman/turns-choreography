@@ -9,28 +9,32 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static org.apache.shiro.util.ThreadContext.remove;
+
 @Service
 public class TurnsDatabase {
 
-    private ConcurrentMap<String, TurnRequest> inProgressRequests;
+    private ConcurrentMap<String, TurnRequest> requests;
     private ConcurrentMap<String, Move> moves;
+    private ConcurrentMap<String, WaitingRequestList> waitingRequests;
 
     @PostConstruct
     public void init() {
-        inProgressRequests = new ConcurrentHashMap<>();
+        requests = new ConcurrentHashMap<>();
         moves = new ConcurrentHashMap<>();
+        waitingRequests = new ConcurrentHashMap<>();
     }
 
-    public void addInProgress(TurnRequest request) {
-        inProgressRequests.put(request.getTurnId(), request);
+    public void addTurnRequest(TurnRequest request) {
+        requests.put(request.getTurnId(), request);
     }
 
     public void addUpdateMove(Move move) {
         moves.put(move.getMoveId(), move);
     }
 
-    public Optional<TurnRequest> findInProgressRequest(String turnId) {
-        return Optional.ofNullable(inProgressRequests.get(turnId));
+    public Optional<TurnRequest> findTurnRequest(String turnId) {
+        return Optional.ofNullable(requests.get(turnId));
     }
 
     public Optional<Move> findMove(String moveId) {
@@ -38,7 +42,36 @@ public class TurnsDatabase {
     }
 
     public void cleanup(TurnRequest request) {
-        inProgressRequests.remove(request.getTurnId());
+        requests.remove(request.getTurnId());
         request.getMoves().forEach(m -> moves.remove(m.getMoveId()));
+        waitingRequests.remove(request);
+    }
+
+    public void addWaiting(TurnRequest request) {
+        synchronized (waitingRequests) {
+            waitingRequests
+                    .computeIfAbsent(request.getPlayerId(), s -> new WaitingRequestList())
+                    .add(request);
+        }
+    }
+
+    public void removeWaiting(TurnRequest request) {
+        synchronized (waitingRequests) {
+            WaitingRequestList requestList = waitingRequests.get(request.getPlayerId());
+            requestList.remove(request);
+            if (requestList.isEmpty()) {
+                waitingRequests.remove(request.getPlayerId());
+            }
+        }
+    }
+
+    public boolean isNextWaitingRequest(String playerId, String requestId) {
+        synchronized (waitingRequests) {
+            WaitingRequestList list = waitingRequests.get(playerId);
+            if (list != null) {
+                return requestId.equals(list.iterator().next().getTurnId());
+            }
+            return false;
+        }
     }
 }

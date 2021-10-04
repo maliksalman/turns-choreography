@@ -6,6 +6,10 @@ spring:
     name: api
   jackson:
     default-property-inclusion: non_null
+  autoconfigure:
+    exclude:
+      - org.redisson.spring.starter.RedissonAutoConfiguration
+      - org.springframework.geode.boot.autoconfigure.ClientCacheAutoConfiguration
   cloud:
     function:
       definition: moveCompleted;turnCompleted

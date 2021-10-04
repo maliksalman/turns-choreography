@@ -15,7 +15,7 @@ public class TurnsService {
 
     public Mono<TurnResponse> turn(TurnRequest req) {
         return Mono
-                .fromRunnable(() -> turnChoreographer.turnNow(req))
+                .fromRunnable(() -> turnChoreographer.turn(req))
                 .then(sink.findResponse(req.getTurnId()));
     }
 

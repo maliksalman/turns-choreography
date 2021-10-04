@@ -4,4 +4,4 @@ spring:
       default-binder: kafka
       kafka:
         binder:
-          brokers: localhost
+          brokers: 192.168.86.239

@@ -31,6 +31,9 @@ dependencies {
 
 	implementation 'org.springdoc:springdoc-openapi-webflux-ui:1.5.10'
 
+	implementation 'org.springframework.geode:spring-geode-starter:1.5.5'
+	implementation 'org.redisson:redisson-spring-boot-starter:3.16.3'
+
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
