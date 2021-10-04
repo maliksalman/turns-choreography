@@ -19,18 +19,18 @@ services:
     ports:
       - "9090:9090"
 
-  redis:
-    image: redis:6.2.5-buster
-    container_name: redis
-    ports:
-      - "6379:6379"
-
-  rabbit:
-    image: rabbitmq:3-management
-    container_name: rabbit
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+#  redis:
+#    image: redis:6.2.5-buster
+#    container_name: redis
+#    ports:
+#      - "6379:6379"
+#
+#  rabbit:
+#    image: rabbitmq:3-management
+#    container_name: rabbit
+#    ports:
+#      - "5672:5672"
+#      - "15672:15672"
 
   geode-locator:
     image: apachegeode/geode:1.14.0

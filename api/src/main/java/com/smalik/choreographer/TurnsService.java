@@ -15,12 +15,12 @@ public class TurnsService {
 
     public Mono<TurnResponse> turn(TurnRequest req) {
         return Mono
-                .fromRunnable(() -> turnChoreographer.turn(req))
+                .fromRunnable(() -> turnChoreographer.process(req))
                 .then(sink.findResponse(req.getTurnId()));
     }
 
     public Mono<TurnResponse> turnTimedOut(TurnRequest request) {
         return Mono
-                .fromCallable(() -> turnChoreographer.turnTimedOut(request));
+                .fromCallable(() -> turnChoreographer.processTimedOut(request));
     }
 }

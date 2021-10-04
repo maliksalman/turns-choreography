@@ -77,7 +77,7 @@ public class MoveChoreographer {
     }
 
     private void sendMoveCompletedEvent(Move move) {
-        streamBridge.send("move-completed-out-0", move);
+        streamBridge.send("move-completed", move);
 
         // cleanup the move from the database, since we are done with it
         removeMoveTimer.record(() -> database.remove(move.moveId));
@@ -106,7 +106,7 @@ public class MoveChoreographer {
         saveMoveTimer.record(() -> database.save(move));
 
         // send the message for requested the step
-        streamBridge.send(step + "-requested-out-0", MoveStepRequest.builder()
+        streamBridge.send(step + "-requested", MoveStepRequest.builder()
                 .moveId(move.getMoveId())
                 .playerId(move.getPlayerId())
                 .turnId(move.getTurnId())

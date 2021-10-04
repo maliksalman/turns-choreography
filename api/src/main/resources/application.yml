@@ -22,10 +22,10 @@ spring:
         turnCompleted-in-0:
           destination: turn-completed
 
-        moveRequested-out-0:
-          destination: move-requested
-        turnCompleted-out-0:
-          destination: turn-completed
+
+sla:
+  millis: 2500
+  timeout-millis: 5000
 
 management:
   endpoints:

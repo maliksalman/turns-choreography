@@ -30,17 +30,6 @@ spring:
         turn-in-0:
           destination: turn-completed
 
-        breathe-requested-out-0:
-          destination: breathe-requested
-        act-requested-out-0:
-          destination: act-requested
-        react-requested-out-0:
-          destination: react-requested
-        think-requested-out-0:
-          destination: think-requested
-        move-completed-out-0:
-          destination: move-completed
-
   jackson:
     default-property-inclusion: non_null
 

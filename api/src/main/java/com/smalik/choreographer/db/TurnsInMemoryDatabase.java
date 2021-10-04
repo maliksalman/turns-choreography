@@ -1,5 +1,6 @@
-package com.smalik.choreographer;
+package com.smalik.choreographer.db;
 
+import com.smalik.choreographer.WaitingRequestList;
 import com.smalik.choreographer.api.Move;
 import com.smalik.choreographer.api.TurnRequest;
 import org.springframework.stereotype.Service;
@@ -9,10 +10,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static org.apache.shiro.util.ThreadContext.remove;
-
 @Service
-public class TurnsDatabase {
+public class TurnsInMemoryDatabase {
 
     private ConcurrentMap<String, TurnRequest> requests;
     private ConcurrentMap<String, Move> moves;

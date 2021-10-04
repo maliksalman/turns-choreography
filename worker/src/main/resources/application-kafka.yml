@@ -2,6 +2,6 @@ spring:
   cloud:
     stream:
       default-binder: kafka
-      kafka:
-        binder:
-          brokers: 192.168.86.239
+#      kafka:
+#        binder:
+#          brokers: 192.168.86.239

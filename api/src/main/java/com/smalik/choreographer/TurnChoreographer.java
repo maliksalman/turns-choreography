@@ -1,13 +1,20 @@
 package com.smalik.choreographer;
 
-import com.smalik.choreographer.api.*;
+import com.smalik.choreographer.api.Move;
+import com.smalik.choreographer.api.TurnRequest;
+import com.smalik.choreographer.api.TurnResponse;
+import com.smalik.choreographer.db.PlayerLockService;
+import com.smalik.choreographer.db.RequestsDatabase;
+import com.smalik.choreographer.db.TurnRequestInfo;
+import com.smalik.choreographer.db.TurnsInMemoryDatabase;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -15,97 +22,124 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TurnChoreographer {
 
-    private final TurnsDatabase database;
+    private final TurnsInMemoryDatabase memory;
     private final StreamBridge streamBridge;
     private final TurnResponseSink sink;
     private final PlayerLockService lockService;
     private final RequestsDatabase requests;
+    private final Metrics metrics;
 
-    public void turn(TurnRequest request) {
+    private Timer moveCompletedTimer;
+    private Timer turnCompletedTimer;
+    private Timer generateResponseTimer;
+    private Timer processTimer;
 
-        // save the request
-        database.addTurnRequest(request);
-        requests.addRequest(request.getTurnId(), request.getPlayerId(), request.getTime());
-
-        if (lockService.lock(request.getPlayerId())) {
-            // process the first move's first step
-            TurnRequest.MoveRequest mr = request.getMoves().get(0);
-            sendMoveRequestedEvent(request, mr);
-        } else {
-            database.addWaiting(request);
-        }
+    @PostConstruct
+    public void init() {
+        moveCompletedTimer = metrics.createTimer("turns.move-completed");
+        turnCompletedTimer = metrics.createTimer("turns.turn-completed");
+        generateResponseTimer = metrics.createTimer("turns.generate-response");
+        processTimer = metrics.createTimer("turns.process");
     }
 
-    public TurnResponse turnTimedOut(TurnRequest request) {
+    public void process(TurnRequest request) {
+        processTimer.record(() -> {
+            // save the request
+            memory.addTurnRequest(request);
+            requests.addRequest(TurnRequestInfo.builder()
+                    .playerId(request.getPlayerId())
+                    .turnId(request.getTurnId())
+                    .time(request.getTime())
+                    .build());
+
+            if (lockService.lock(request.getPlayerId())) {
+                log.info("Processing turn: Player={}, Turn={}", request.getPlayerId(), request.getTurnId());
+                // process the first move's first step
+                TurnRequest.MoveRequest mr = request.getMoves().get(0);
+                sendMoveRequestedEvent(request, mr);
+            } else {
+                log.info("Waiting: Player={}, Turn={}", request.getPlayerId(), request.getTurnId());
+                memory.addWaiting(request);
+            }
+        });
+    }
+
+    public TurnResponse processTimedOut(TurnRequest request) {
         return generateTurnResponse(request, true);
     }
 
     public void handleMoveCompleted(Move move) {
-        log.info("Handling move completed: Turn={}, Move={}", move.getTurnId(), move.getMoveId());
-        database.addUpdateMove(move);
+        moveCompletedTimer.record(() -> {
 
-        // find the next move in the turn
-        database.findTurnRequest(move.getTurnId())
-                .map(request -> {
-                    TurnRequest.MoveRequest nextMoveRequest = null;
-                    for (int i = 0; i < request.getMoves().size(); i++) {
-                        TurnRequest.MoveRequest mr = request.getMoves().get(i);
-                        if (mr.getMoveId().equals(move.getMoveId()) && (i + 1) < request.getMoves().size()) {
-                            nextMoveRequest = request.getMoves().get(i + 1);
-                            break;
+            log.info("Handling move completed: Turn={}, Move={}", move.getTurnId(), move.getMoveId());
+            memory.addUpdateMove(move);
+
+            // find the next move in the turn
+            memory.findTurnRequest(move.getTurnId())
+                    .map(request -> {
+                        TurnRequest.MoveRequest nextMoveRequest = null;
+                        for (int i = 0; i < request.getMoves().size(); i++) {
+                            TurnRequest.MoveRequest mr = request.getMoves().get(i);
+                            if (mr.getMoveId().equals(move.getMoveId()) && (i + 1) < request.getMoves().size()) {
+                                nextMoveRequest = request.getMoves().get(i + 1);
+                                break;
+                            }
                         }
-                    }
 
-                    if (nextMoveRequest != null) {
-                        // if next move found - start processing it
-                        sendMoveRequestedEvent(request, nextMoveRequest);
-                    } else {
-                        // if this was last move, turn is complete
-                        generateTurnResponse(request, false);
-                    }
+                        if (nextMoveRequest != null) {
+                            // if next move found - start processing it
+                            sendMoveRequestedEvent(request, nextMoveRequest);
+                        } else {
+                            // if this was last move, turn is complete
+                            generateTurnResponse(request, false);
+                        }
 
-                    return request;
-                });
+                        return request;
+                    });
+        });
     }
 
     private TurnResponse generateTurnResponse(TurnRequest request, boolean timeout) {
-        TurnResponse response = TurnResponse.builder()
-                .playerId(request.getPlayerId())
-                .turnId(request.getTurnId())
-                .startTime(request.getTime())
-                .finishTime(OffsetDateTime.now())
-                .timeout(timeout)
-                .moves(request.getMoves().stream()
-                        .map(mr -> database
-                                .findMove(mr.getMoveId())
-                                .orElse(toMoveFromRequest(request, mr, Move.Status.NONE)))
-                        .collect(Collectors.toList()))
-                .build();
+        return generateResponseTimer.record(() -> {
 
-        // notify the sink
-        if (timeout) {
-            sink.registerTimeout(request.getTurnId());
-        } else {
-            sink.registerResponse(response);
-        }
+            TurnResponse response = TurnResponse.builder()
+                    .playerId(request.getPlayerId())
+                    .turnId(request.getTurnId())
+                    .startTime(request.getTime())
+                    .finishTime(OffsetDateTime.now())
+                    .timeout(timeout)
+                    .moves(request.getMoves().stream()
+                            .map(mr -> memory
+                                    .findMove(mr.getMoveId())
+                                    .orElse(toMoveFromRequest(request, mr, Move.Status.NONE)))
+                            .collect(Collectors.toList()))
+                    .build();
 
-        // clean up database
-        database.cleanup(request);
-        requests.removeRequest(request.getTurnId());
+            // notify the sink
+            if (timeout) {
+                sink.registerTimeout(request.getTurnId());
+            } else {
+                sink.registerResponse(response);
+            }
 
-        // only release lock if no other requests are waiting for this player
-        if (requests.findRequests(request.getPlayerId()).isEmpty()) {
-            lockService.unlock(request.getPlayerId());
-        }
+            // clean up database
+            memory.cleanup(request);
+            requests.removeRequest(request.getTurnId());
 
-        // let everybody know turn is complete
-        sendTurnCompletedEvent(request.getTurnId(), request.getPlayerId(), timeout);
+            // only release lock if no other requests are waiting for this player
+            if (requests.findRequests(request.getPlayerId()).isEmpty()) {
+                lockService.unlock(request.getPlayerId());
+            }
 
-        return response;
+            // let everybody know turn is complete
+            sendTurnCompletedEvent(request.getTurnId(), request.getPlayerId(), timeout);
+
+            return response;
+        });
     }
 
     private void sendTurnCompletedEvent(String turnId, String playerId, boolean timeout) {
-        streamBridge.send("turnCompleted-out-0", TurnCompleted.builder()
+        streamBridge.send("turn-completed", TurnCompleted.builder()
                 .turnId(turnId)
                 .playerId(playerId)
                 .timeout(timeout)
@@ -125,30 +159,34 @@ public class TurnChoreographer {
 
     private void sendMoveRequestedEvent(TurnRequest request, TurnRequest.MoveRequest moveRequest) {
         Move move = toMoveFromRequest(request, moveRequest, Move.Status.REQUESTED);
-        database.addUpdateMove(move);
-        streamBridge.send("moveRequested-out-0", move);
+        memory.addUpdateMove(move);
+        streamBridge.send("move-requested", move);
     }
 
 
     public void handleTurnCompleted(String turnId, String playerId, boolean timeout) {
-        log.info("Handling turn completed: Turn={}, Player={}, Timeout={}", turnId, playerId, timeout);
-        if (!timeout) {
-            List<TurnRequestInfo> requests = this.requests.findRequests(playerId);
-            if (requests != null) {
-                String nextTurnId = requests.get(0).getTurnId();
-                if (database.isNextWaitingRequest(playerId, nextTurnId)) {
+        turnCompletedTimer.record(() -> {
 
-                    database.findTurnRequest(nextTurnId)
-                            .ifPresentOrElse(request -> {
-                                database.removeWaiting(request);
-                                TurnRequest.MoveRequest mr = request.getMoves().get(0);
-                                sendMoveRequestedEvent(request, mr);
-                            }, () -> {
-                                log.warn("cant find request even though should have it: Player={}, Tur={}", playerId, nextTurnId);
-                            });
+            log.info("Handling turn completed: Turn={}, Player={}, Timeout={}", turnId, playerId, timeout);
+            if (!timeout) {
+                requests.findRequests(playerId).stream()
+                        .findFirst()
+                        .map(req -> req.getTurnId())
+                        .ifPresent(nextTurnId -> {
+                            if (memory.isNextWaitingRequest(playerId, nextTurnId)) {
+                                memory.findTurnRequest(nextTurnId)
+                                        .ifPresentOrElse(request -> {
+                                            memory.removeWaiting(request);
+                                            log.info("Processing turn: Player={}, Turn={}", request.getPlayerId(), request.getTurnId());
+                                            TurnRequest.MoveRequest mr = request.getMoves().get(0);
+                                            sendMoveRequestedEvent(request, mr);
+                                        }, () -> {
+                                            log.warn("cant find request even though should have it: Player={}, Turn={}", playerId, nextTurnId);
+                                        });
 
-                }
+                            }
+                        });
             }
-        }
+        });
     }
 }
