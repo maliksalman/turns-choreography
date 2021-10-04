@@ -52,3 +52,12 @@ services:
       - "40404:40404"
     command:
       - /startup/server.sh
+
+  kafka:
+    image: maliksalman/kafka-dev:3.0.0
+    container_name: kafka
+    ports:
+      - "2181:2181"
+      - "9092:9092"
+    environment:
+      ADVERTISED_HOST: localhost
