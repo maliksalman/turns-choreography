@@ -398,6 +398,38 @@
           "interval": "",
           "legendFormat": "Response Time",
           "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(turns_turn_completed_seconds_bucket[1m])))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Turn Completed",
+          "refId": "B"
+        },
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(turns_move_completed_seconds_bucket[1m])))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Move Completed",
+          "refId": "C"
+        },
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(turns_generate_response_seconds_bucket[1m])))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Generate Response",
+          "refId": "D"
+        },
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(turns_process_seconds_bucket[1m])))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Process",
+          "refId": "E"
         }
       ],
       "title": "Successful Response Times",

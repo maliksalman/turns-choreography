@@ -29,10 +29,10 @@ public class RequesterService {
     public void generateLoad(WebClient webClient, List<Load> loadRequests) {
         AtomicInteger counter = new AtomicInteger(0);
         List<Flux<TurnResponse>> fluxes = loadRequests.stream()
-                .map(load -> Flux.range(1, load.getDurationSeconds())
+                .map(load -> Flux.range(1, load.getDurationSeconds()*10)
                         .limitRate(1)
-                        .delayElements(Duration.ofSeconds(1))
-                        .map(idx -> Flux.range(1, load.getArrivalRate()))
+                        .delayElements(Duration.ofMillis(100))
+                        .map(idx -> Flux.range(1, load.getArrivalRate()/10))
                         .flatMap(idx -> idx)
                         .map(idx -> generateRequest())
                         .map(req -> makeRequest(webClient, req))
