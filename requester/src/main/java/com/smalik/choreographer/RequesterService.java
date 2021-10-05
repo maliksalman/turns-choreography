@@ -54,7 +54,7 @@ public class RequesterService {
     private TurnRequest generateRequest() {
         return TurnRequest.builder()
                 .time(OffsetDateTime.now())
-                .playerId(faker.lorem().word())
+                .playerId(faker.lorem().word() + "-" + faker.random().hex(8))
                 .turnId(UUID.randomUUID().toString())
                 .moves(List.of(TurnRequest.MoveRequest.builder()
                         .moveId(UUID.randomUUID().toString())
