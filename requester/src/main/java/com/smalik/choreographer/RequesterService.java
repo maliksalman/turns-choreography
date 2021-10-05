@@ -29,10 +29,11 @@ public class RequesterService {
     public void generateLoad(WebClient webClient, List<Load> loadRequests) {
         AtomicInteger counter = new AtomicInteger(0);
         List<Flux<TurnResponse>> fluxes = loadRequests.stream()
-                .map(load -> Flux.range(1, load.getDurationSeconds()*10)
+                .map(load -> new LoadDistribution(load))
+                .map(distribution -> Flux.range(1, distribution.getTicks())
                         .limitRate(1)
-                        .delayElements(Duration.ofMillis(100))
-                        .map(idx -> Flux.range(1, load.getArrivalRate()/10))
+                        .delayElements(Duration.ofMillis(distribution.getDelayMillis()))
+                        .map(idx -> Flux.range(1, distribution.getMessagesForTick(idx)))
                         .flatMap(idx -> idx)
                         .map(idx -> generateRequest())
                         .map(req -> makeRequest(webClient, req))
@@ -55,7 +56,7 @@ public class RequesterService {
     private TurnRequest generateRequest() {
         return TurnRequest.builder()
                 .time(OffsetDateTime.now())
-                .playerId(faker.lorem().word() + "-" + faker.random().hex(8))
+                .playerId(faker.lorem().word() + "-" + faker.lorem().word())
                 .turnId(UUID.randomUUID().toString())
                 .moves(List.of(TurnRequest.MoveRequest.builder()
                         .moveId(UUID.randomUUID().toString())
