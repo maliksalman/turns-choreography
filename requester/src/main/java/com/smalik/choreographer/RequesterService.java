@@ -43,9 +43,10 @@ public class RequesterService {
     }
 
     private void collectStats(AtomicInteger counter, TurnResponse resp) {
-        log.info("Number={}, Id={}, Timeout={}, ResponseGenerationTime={}, ResponseTime={}",
+        log.info("Number={}, Id={}, Player={}, Timeout={}, ResponseGenerationTime={}, ResponseTime={}",
                 counter.incrementAndGet(),
                 resp.getTurnId(),
+                resp.getPlayerId(),
                 resp.isTimeout(),
                 Duration.between(resp.getStartTime(), resp.getFinishTime()).toMillis(),
                 Duration.between(resp.getStartTime(), OffsetDateTime.now()).toMillis());
