@@ -21,12 +21,7 @@ LOAD='[
   { "arrivalRate": 170, "durationSeconds": 15 },
   { "arrivalRate": 180, "durationSeconds": 15 },
   { "arrivalRate": 190, "durationSeconds": 15 },
-  { "arrivalRate": 200, "durationSeconds": 15 },
-  { "arrivalRate": 210, "durationSeconds": 15 },
-  { "arrivalRate": 220, "durationSeconds": 15 },
-  { "arrivalRate": 230, "durationSeconds": 15 },
-  { "arrivalRate": 240, "durationSeconds": 15 },
-  { "arrivalRate": 250, "durationSeconds": 15 }
+  { "arrivalRate": 200, "durationSeconds": 150 }
 ]'
 
 curl -X POST 'http://localhost:8181/requests' -H 'Content-Type: application/json' -d "${LOAD}"
