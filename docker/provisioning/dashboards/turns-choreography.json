@@ -511,34 +511,34 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(choreographer_steps_breathe_seconds_bucket[1m])))",
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(choreographer_steps_left_seconds_bucket[1m])))",
           "hide": false,
           "interval": "",
-          "legendFormat": "Breathe",
+          "legendFormat": "Left",
           "refId": "D"
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(choreographer_steps_think_seconds_bucket[1m])))",
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(choreographer_steps_right_seconds_bucket[1m])))",
           "hide": false,
           "interval": "",
-          "legendFormat": "Think",
+          "legendFormat": "Right",
           "refId": "B"
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(choreographer_steps_act_seconds_bucket[1m])))",
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(choreographer_steps_forward_seconds_bucket[1m])))",
           "hide": false,
           "interval": "",
-          "legendFormat": "Act",
+          "legendFormat": "Forward",
           "refId": "E"
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(choreographer_steps_react_seconds_bucket[1m])))",
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(choreographer_steps_back_seconds_bucket[1m])))",
           "hide": false,
           "interval": "",
-          "legendFormat": "React",
+          "legendFormat": "Back",
           "refId": "G"
         }
       ],

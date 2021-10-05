@@ -22,36 +22,30 @@ public class ChoreographyListener {
                 .subscribe();
     }
 
-
     @Bean
-    public Consumer<Flux<MoveStepResponse>> breathe() {
-        return flux -> flux
-                .publishOn(Schedulers.boundedElastic())
-                .doOnNext(resp -> moveChoreographer.handleMoveStepCompleted(resp.getTurnId(), resp.getMoveId(), "breathe", resp.isFailed()))
-                .subscribe();
+    public Consumer<Flux<MoveStepResponse>> forward() {
+        return moveStepCompleted("forward");
     }
 
     @Bean
-    public Consumer<Flux<MoveStepResponse>> think() {
-        return flux -> flux
-                .publishOn(Schedulers.boundedElastic())
-                .doOnNext(resp -> moveChoreographer.handleMoveStepCompleted(resp.getTurnId(), resp.getMoveId(), "think", resp.isFailed()))
-                .subscribe();
+    public Consumer<Flux<MoveStepResponse>> back() {
+        return moveStepCompleted("back");
     }
 
     @Bean
-    public Consumer<Flux<MoveStepResponse>> act() {
-        return flux -> flux
-                .publishOn(Schedulers.boundedElastic())
-                .doOnNext(resp -> moveChoreographer.handleMoveStepCompleted(resp.getTurnId(), resp.getMoveId(), "act", resp.isFailed()))
-                .subscribe();
+    public Consumer<Flux<MoveStepResponse>> right() {
+        return moveStepCompleted("right");
     }
 
     @Bean
-    public Consumer<Flux<MoveStepResponse>> react() {
+    public Consumer<Flux<MoveStepResponse>> left() {
+        return moveStepCompleted("left");
+    }
+
+    private Consumer<Flux<MoveStepResponse>> moveStepCompleted(String step) {
         return flux -> flux
                 .publishOn(Schedulers.boundedElastic())
-                .doOnNext(resp -> moveChoreographer.handleMoveStepCompleted(resp.getTurnId(), resp.getMoveId(), "react", resp.isFailed()))
+                .doOnNext(resp -> moveChoreographer.handleMoveStepCompleted(resp.getTurnId(), resp.getMoveId(), step, resp.isFailed()))
                 .subscribe();
     }
 }
