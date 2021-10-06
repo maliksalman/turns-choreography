@@ -10,21 +10,21 @@ spring:
       - org.springframework.geode.boot.autoconfigure.ClientCacheAutoConfiguration
   cloud:
     function:
-      definition: breathe;act;react;think;move
+      definition: forward;back;right;left;move
     stream:
       default-binder: rabbit
       default:
         group: ${spring.application.name}
       bindings:
 
-        breathe-in-0:
-          destination: breathe-completed
-        act-in-0:
-          destination: act-completed
-        react-in-0:
-          destination: react-completed
-        think-in-0:
-          destination: think-completed
+        forward-in-0:
+          destination: forward-completed
+        back-in-0:
+          destination: back-completed
+        right-in-0:
+          destination: right-completed
+        left-in-0:
+          destination: left-completed
         move-in-0:
           destination: move-requested
         turn-in-0:
