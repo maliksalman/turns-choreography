@@ -2,3 +2,5 @@ spring:
   autoconfigure:
     exclude:
       - org.redisson.spring.starter.RedissonAutoConfiguration
+#geode:
+#  locators: 192.168.86.26[10334]
