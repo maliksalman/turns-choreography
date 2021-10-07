@@ -14,6 +14,7 @@ import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.stream.Collectors;
 
@@ -33,6 +34,8 @@ public class TurnChoreographer {
     private Timer turnCompletedTimer;
     private Timer generateResponseTimer;
     private Timer processTimer;
+    private Timer moveResponseTimer;
+    private Timer moveResponseInflightTimer;
 
     @PostConstruct
     public void init() {
@@ -40,6 +43,8 @@ public class TurnChoreographer {
         turnCompletedTimer = metrics.createTimer("turns.turn-completed");
         generateResponseTimer = metrics.createTimer("turns.generate-response");
         processTimer = metrics.createTimer("turns.process");
+        moveResponseTimer = metrics.createTimer("turns.move-response");
+        moveResponseInflightTimer = metrics.createTimer("turns.move-response-inflight");
     }
 
     public void process(TurnRequest request) {
@@ -71,12 +76,15 @@ public class TurnChoreographer {
     public void handleMoveCompleted(Move move) {
         moveCompletedTimer.record(() -> {
 
-            log.info("Handling move completed: Turn={}, Move={}", move.getTurnId(), move.getMoveId());
-            memory.addUpdateMove(move);
-
             // find the next move in the turn
             memory.findTurnRequest(move.getTurnId())
                     .map(request -> {
+
+                        log.info("Handling move completed: Turn={}, Move={}", move.getTurnId(), move.getMoveId());
+                        moveResponseTimer.record(Duration.between(move.getStatus().getStartTime(), move.getStatus().getFinishTime()));
+                        moveResponseInflightTimer.record(Duration.between(move.getStatus().getFinishTime(), OffsetDateTime.now()));
+                        memory.addUpdateMove(move);
+
                         TurnRequest.MoveRequest nextMoveRequest = null;
                         for (int i = 0; i < request.getMoves().size(); i++) {
                             TurnRequest.MoveRequest mr = request.getMoves().get(i);
@@ -153,16 +161,19 @@ public class TurnChoreographer {
                 .moveId(mr.getMoveId())
                 .type(mr.getType())
                 .quantity(mr.getPlaces())
-                .status(initialMoveStatus)
+                .status(Move.MoveStatus.builder()
+                        .status(initialMoveStatus)
+                        .build())
                 .build();
     }
 
     private void sendMoveRequestedEvent(TurnRequest request, TurnRequest.MoveRequest moveRequest) {
         Move move = toMoveFromRequest(request, moveRequest, Move.Status.REQUESTED);
+        move.getStatus().setStartTime(OffsetDateTime.now());
+
         memory.addUpdateMove(move);
         streamBridge.send("move-requested", move);
     }
-
 
     public void handleTurnCompleted(String turnId, String playerId, boolean timeout) {
         turnCompletedTimer.record(() -> {

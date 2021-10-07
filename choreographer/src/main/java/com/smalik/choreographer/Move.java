@@ -24,9 +24,20 @@ public class Move {
     String playerId;
     String type;
     int quantity;
-    Status status;
 
-    Map<String, StepStatus> statuses;
+    MoveStatus status;
+    Map<String, StepStatus> stepStatuses;
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class MoveStatus {
+        boolean failed;
+        OffsetDateTime startTime;
+        OffsetDateTime finishTime;
+        Status status;
+    }
 
     @Data
     @AllArgsConstructor

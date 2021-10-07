@@ -404,7 +404,7 @@
           "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(turns_turn_completed_seconds_bucket[1m])))",
           "hide": false,
           "interval": "",
-          "legendFormat": "Turn Completed",
+          "legendFormat": "Turn Completed Handling",
           "refId": "B"
         },
         {
@@ -412,7 +412,7 @@
           "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(turns_move_completed_seconds_bucket[1m])))",
           "hide": false,
           "interval": "",
-          "legendFormat": "Move Completed",
+          "legendFormat": "Move Completed Handling",
           "refId": "C"
         },
         {
@@ -430,6 +430,22 @@
           "interval": "",
           "legendFormat": "Process",
           "refId": "E"
+        },
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(turns_move_response_seconds_bucket[1m])))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Move",
+          "refId": "F"
+        },
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(${percentile}/100, sum by (le) (rate(turns_move_response_inflight_seconds_bucket[1m])))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Move Completed Inflight",
+          "refId": "G"
         }
       ],
       "title": "Successful Response Times",

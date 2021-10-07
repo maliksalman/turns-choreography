@@ -48,7 +48,7 @@ public class MoveChoreographer {
                     OffsetDateTime now = OffsetDateTime.now();
                     findMoveTimer.record(Duration.between(instant, now.toInstant()));
 
-                    Move.StepStatus stepStatus = move.getStatuses().get(step);
+                    Move.StepStatus stepStatus = move.getStepStatuses().get(step);
                     stepStatus.setStatus(Move.Status.DONE);
                     stepStatus.setFailed(failed);
                     stepStatus.setFinishTime(now);
@@ -61,7 +61,7 @@ public class MoveChoreographer {
                             step,
                             stepTime.toMillis());
 
-                    boolean moveDone = move.getStatuses().values().stream()
+                    boolean moveDone = move.getStepStatuses().values().stream()
                             .allMatch(s -> s.getStatus() == Move.Status.DONE);
 
                     if (!moveDone) {
@@ -69,7 +69,6 @@ public class MoveChoreographer {
                         String nextStep = Move.STEPS.get(Move.STEPS.indexOf(step) + 1);
                         sendMoveStepRequestedEvent(nextStep, move);
                     } else {
-                        move.setStatus(Move.Status.DONE);
                         sendMoveCompletedEvent(move);
                     }
                     return move;
@@ -77,6 +76,12 @@ public class MoveChoreographer {
     }
 
     private void sendMoveCompletedEvent(Move move) {
+
+        // update the move status
+        move.getStatus().setStatus(Move.Status.DONE);
+        move.getStatus().setFinishTime(OffsetDateTime.now());
+
+        // send the message
         streamBridge.send("move-completed", move);
 
         // cleanup the move from the database, since we are done with it
@@ -85,7 +90,7 @@ public class MoveChoreographer {
 
     public void startProcessingMove(Move move) {
         // save the move
-        move.setStatuses(Move.STEPS.stream()
+        move.setStepStatuses(Move.STEPS.stream()
                 .map(name -> Move.StepStatus.builder()
                         .step(name)
                         .status(Move.Status.NONE)
@@ -99,8 +104,8 @@ public class MoveChoreographer {
     private void sendMoveStepRequestedEvent(String step, Move move) {
 
         OffsetDateTime now = OffsetDateTime.now();
-        move.getStatuses().get(step).setStartTime(now);
-        move.getStatuses().get(step).setStatus(Move.Status.REQUESTED);
+        move.getStepStatuses().get(step).setStartTime(now);
+        move.getStepStatuses().get(step).setStatus(Move.Status.REQUESTED);
 
         // save the current view of the move in the database
         saveMoveTimer.record(() -> database.save(move));
