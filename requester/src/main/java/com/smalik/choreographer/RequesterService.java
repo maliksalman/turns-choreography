@@ -9,16 +9,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxExtensionsKt;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,23 +25,20 @@ public class RequesterService {
     private final Faker faker = Faker.instance();
 
     public void generateLoad(WebClient webClient, List<Load> loadRequests) {
-        AtomicInteger counter = new AtomicInteger(0);
-        List<Flux<TurnResponse>> fluxes = loadRequests.stream()
-                .map(load -> new LoadDistribution(load))
-                .map(distribution -> Flux.range(1, distribution.getTicks())
-                        .limitRate(1)
-                        .delayElements(Duration.ofMillis(distribution.getDelayMillis()))
-                        .map(idx -> Flux.range(1, distribution.getMessagesForTick(idx)))
-                        .flatMap(idx -> idx)
-                        .map(idx -> generateRequest())
-                        .map(req -> makeRequest(webClient, req))
-                        .flatMap(resp -> resp))
-                .collect(Collectors.toList());
 
-        Flux.concat(fluxes)
-                .parallel()
-                .runOn(Schedulers.boundedElastic())
-                .subscribe(resp -> collectStats(counter, resp));
+        AtomicInteger counter = new AtomicInteger(0);
+        LoadDistribution distribution = new LoadDistribution(loadRequests);
+
+        Flux.range(0, distribution.getTicks())
+                .limitRate(1)
+                .delayElements(Duration.ofMillis(distribution.getDelayMillis()))
+                .map(idx -> Flux.range(0, distribution.getMessagesForTick(idx)))
+                .flatMap(idx -> idx)
+                .map(idx -> generateRequest())
+                .map(req -> makeRequest(webClient, req))
+                .flatMap(resp -> resp)
+                .doOnNext(resp -> collectStats(counter, resp))
+                .subscribe();
     }
 
     private void collectStats(AtomicInteger counter, TurnResponse resp) {
@@ -75,7 +69,6 @@ public class RequesterService {
                 .uri("/turns")
                 .body(BodyInserters.fromValue(request))
                 .retrieve()
-                .bodyToMono(TurnResponse.class)
-                .publishOn(Schedulers.boundedElastic());
+                .bodyToMono(TurnResponse.class);
     }
 }

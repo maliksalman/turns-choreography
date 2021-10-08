@@ -2,67 +2,65 @@ package com.smalik.choreographer;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class LoadDistributionTest {
 
-    LoadDistribution create(int arrivalRate, int durationSeconds) {
-        return new LoadDistribution(Load.builder()
-                .arrivalRate(arrivalRate)
-                .durationSeconds(durationSeconds)
-                .build());
+    LoadDistribution create(Load... loads) {
+        return new LoadDistribution(List.of(loads));
+    }
+
+    int[] getExpected20Pair(int val, int count) {
+        int[] arr = new int[LoadDistribution.MAX_TICKS_PER_SECONDS];
+        for(int i = 0; i < LoadDistribution.MAX_TICKS_PER_SECONDS; i++) {
+            arr[i] = (i < count) ? val : (val-1);
+        }
+        return arr;
     }
 
     @Test
     void testSimple() {
-        LoadDistribution distribution = create(1, 1);
-        assertLoadDistribution(distribution, 1000, 1);
+        LoadDistribution distribution = create(new Load(1, 1));
+        assertLoadDistribution(distribution, getExpected20Pair(1, 1));
     }
 
     @Test
-    void testSimpleForMultipleSeconds() {
-        LoadDistribution distribution = create(1, 10);
-        assertLoadDistribution(distribution, 1000, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+    void testSimpleUneven() {
+        LoadDistribution distribution = create(new Load(24, 1));
+        assertLoadDistribution(distribution, getExpected20Pair(2, 4));
     }
 
     @Test
-    void testEvenDistribution() {
-        LoadDistribution distribution = create(10, 1);
-        assertLoadDistribution(distribution, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+    void testSimpleUnevenLargeArrivalRate() {
+        LoadDistribution distribution = create(new Load(210, 1));
+        assertLoadDistribution(distribution, getExpected20Pair(11, 10));
     }
 
     @Test
-    void testUnevenDistribution() {
-        LoadDistribution distribution = create(7, 1);
-        assertLoadDistribution(distribution, 200, 2, 2, 1, 1, 1);
+    void testSimpleUnevenMultipleSeconds() {
+        LoadDistribution distribution = create(new Load(24, 2));
+        assertLoadDistribution(distribution, getExpected20Pair(2, 4), getExpected20Pair(2, 4));
     }
 
     @Test
-    void testUnevenDistributionMultipleSeconds() {
-        LoadDistribution distribution = create(7, 2);
-        assertLoadDistribution(distribution, 200, 2, 2, 1, 1, 1, 2, 2, 1, 1, 1);
+    void testMultipleUneven() {
+        LoadDistribution distribution = create(new Load(24, 1), new Load(43, 1));
+        assertLoadDistribution(distribution, getExpected20Pair(2, 4), getExpected20Pair(3, 3));
     }
 
     @Test
-    void testUnevenDistributionOver20() {
-        LoadDistribution distribution = create(23, 1);
-        assertLoadDistribution(distribution, 50,
-                2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+    void testMultipleUnevenMultipleSeconds() {
+        LoadDistribution distribution = create(new Load(24, 2), new Load(43, 2));
+        assertLoadDistribution(distribution, getExpected20Pair(2, 4), getExpected20Pair(2, 4), getExpected20Pair(3, 3), getExpected20Pair(3, 3));
     }
 
-    @Test
-    void testUnevenDistributionOver20MultipleSeconds() {
-        LoadDistribution distribution = create(23, 2);
-        assertLoadDistribution(distribution, 50, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
-    }
-
-    void assertLoadDistribution(LoadDistribution distribution, long expectedMillis, int... expectedMessagesForTick) {
-
-        assertEquals(expectedMillis, distribution.getDelayMillis());
-        assertEquals(expectedMessagesForTick.length, distribution.getTicks());
-
+    void assertLoadDistribution(LoadDistribution distribution, int[]... expectedMessagesForTick) {
         for(int i = 0; i < expectedMessagesForTick.length; i++) {
-            assertEquals(expectedMessagesForTick[i], distribution.getMessagesForTick(i));
+            for (int j = 0; j < expectedMessagesForTick[i].length; j++) {
+                assertEquals(expectedMessagesForTick[i][j], distribution.getMessagesForTick((i*expectedMessagesForTick[i].length)+j));
+            }
         }
     }
 }
