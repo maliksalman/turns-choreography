@@ -1,5 +1,10 @@
 #!/bin/bash
 
+LOAD_HOST=$1
+if [[ -z $LOAD_HOST ]]; then
+    LOAD_HOST = "localhost"
+fi
+
 LOAD='[
   { "arrivalRate": 5,   "durationSeconds": 15  },
   { "arrivalRate": 10,  "durationSeconds": 15  },
@@ -34,5 +39,5 @@ LOAD='[
   { "arrivalRate": 5,   "durationSeconds": 5   }
 ]'
 
-curl -X POST 'http://localhost:8181/requests' -H 'Content-Type: application/json' -d "${LOAD}"
-curl -X POST 'http://localhost:8282/requests' -H 'Content-Type: application/json' -d "${LOAD}"
+curl -X POST "http://${LOAD_HOST}:8181/requests" -H 'Content-Type: application/json' -d "${LOAD}"
+curl -X POST "http://${LOAD_HOST}:8282/requests" -H 'Content-Type: application/json' -d "${LOAD}"

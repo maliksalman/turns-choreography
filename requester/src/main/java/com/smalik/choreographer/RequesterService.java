@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxExtensionsKt;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -40,7 +41,14 @@ public class RequesterService {
                         .map(req -> makeRequest(webClient, req))
                         .flatMap(resp -> resp))
                 .collect(Collectors.toList());
-        Flux.concat(fluxes)
+
+        Flux<TurnResponse> main = fluxes.get(0);
+        for (int i = 1; i < fluxes.size(); i++) {
+            main = main.thenMany(fluxes.get(i));
+        }
+
+        main.parallel()
+                .runOn(Schedulers.boundedElastic())
                 .subscribe(resp -> collectStats(counter, resp));
     }
 
