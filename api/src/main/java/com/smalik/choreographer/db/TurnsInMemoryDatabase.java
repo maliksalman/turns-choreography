@@ -1,17 +1,24 @@
 package com.smalik.choreographer.db;
 
-import com.smalik.choreographer.WaitingRequestList;
 import com.smalik.choreographer.api.Move;
 import com.smalik.choreographer.api.TurnRequest;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.util.Comparator;
 import java.util.Optional;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @Service
 public class TurnsInMemoryDatabase {
+
+    static class WaitingRequestList extends TreeSet<TurnRequest> {
+        public WaitingRequestList() {
+            super(Comparator.comparing(TurnRequest::getTime));
+        }
+    }
 
     private ConcurrentMap<String, TurnRequest> requests;
     private ConcurrentMap<String, Move> moves;
