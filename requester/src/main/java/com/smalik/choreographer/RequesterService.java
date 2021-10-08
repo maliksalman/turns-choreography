@@ -31,7 +31,7 @@ public class RequesterService {
         List<Flux<TurnResponse>> fluxes = loadRequests.stream()
                 .map(load -> new LoadDistribution(load))
                 .map(distribution -> Flux.range(1, distribution.getTicks())
-                        .doOnSubscribe(idx -> log.info(" ***** Starting load distribution: ArrivalRate={}, DurationSeconds={} *****", distribution.getArrivalRate(), distribution.getDurationSeconds()))
+                        .doFirst(() -> log.info(" ***** Starting load distribution: ArrivalRate={}, DurationSeconds={} *****", distribution.getArrivalRate(), distribution.getDurationSeconds()))
                         .limitRate(1)
                         .delayElements(Duration.ofMillis(distribution.getDelayMillis()))
                         .map(idx -> Flux.range(1, distribution.getMessagesForTick(idx)))
