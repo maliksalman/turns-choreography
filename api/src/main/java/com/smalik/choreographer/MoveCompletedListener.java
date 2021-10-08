@@ -40,7 +40,8 @@ public class MoveCompletedListener {
     @Bean
     public Consumer<Flux<Move>> moveCompleted() {
         return flux -> flux
-                .publishOn(Schedulers.boundedElastic(), 1)
+                .parallel()
+                .runOn(Schedulers.newBoundedElastic(Schedulers.DEFAULT_BOUNDED_ELASTIC_SIZE, Schedulers.DEFAULT_BOUNDED_ELASTIC_QUEUESIZE, "move"))
                 .doOnNext(move -> handleMoveCompleted(move))
                 .subscribe();
     }

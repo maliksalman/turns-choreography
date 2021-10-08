@@ -17,7 +17,8 @@ public class ChoreographyListener {
     @Bean
     public Consumer<Flux<Move>> move() {
         return flux -> flux
-                .publishOn(Schedulers.boundedElastic())
+                .parallel()
+                .runOn(Schedulers.newBoundedElastic(Schedulers.DEFAULT_BOUNDED_ELASTIC_SIZE, Schedulers.DEFAULT_BOUNDED_ELASTIC_QUEUESIZE, "move"))
                 .doOnNext(move -> moveChoreographer.startProcessingMove(move))
                 .subscribe();
     }
@@ -44,7 +45,8 @@ public class ChoreographyListener {
 
     private Consumer<Flux<MoveStepResponse>> moveStepCompleted(String step) {
         return flux -> flux
-                .publishOn(Schedulers.boundedElastic())
+                .parallel()
+                .runOn(Schedulers.newBoundedElastic(Schedulers.DEFAULT_BOUNDED_ELASTIC_SIZE, Schedulers.DEFAULT_BOUNDED_ELASTIC_QUEUESIZE, "steps"))
                 .doOnNext(resp -> moveChoreographer.handleMoveStepCompleted(resp.getTurnId(), resp.getMoveId(), step, resp.isFailed()))
                 .subscribe();
     }

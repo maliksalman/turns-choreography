@@ -34,7 +34,8 @@ public class TurnCompletedListener {
     @Bean
     public Consumer<Flux<TurnCompleted>> turnCompleted() {
         return flux -> flux
-                .publishOn(Schedulers.boundedElastic(), 1)
+                .parallel()
+                .runOn(Schedulers.newBoundedElastic(Schedulers.DEFAULT_BOUNDED_ELASTIC_SIZE, Schedulers.DEFAULT_BOUNDED_ELASTIC_QUEUESIZE, "turn"))
                 .doOnNext(event -> handleTurnCompleted(event))
                 .subscribe();
     }
