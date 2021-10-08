@@ -38,11 +38,8 @@ public class RequesterService {
                         .flatMap(idx -> idx)
                         .map(idx -> generateRequest())
                         .map(req -> makeRequest(webClient, req))
-                        .flatMap(resp -> resp)
-                        .doOnComplete(() -> log.info(" ***** Done with load distribution: ArrivalRate={}, DurationSeconds={} *****", distribution.getArrivalRate(), distribution.getDurationSeconds()))
-                )
+                        .flatMap(resp -> resp))
                 .collect(Collectors.toList());
-
 
         Flux.concat(fluxes)
                 .parallel()
