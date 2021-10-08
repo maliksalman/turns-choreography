@@ -1,5 +1,8 @@
 package com.smalik.choreographer;
 
+import lombok.Getter;
+
+@Getter
 public class LoadDistribution {
 
     private static final int MAX_TICKS_PER_SECONDS = 20;
