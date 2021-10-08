@@ -32,22 +32,20 @@ public class RequesterService {
         List<Flux<TurnResponse>> fluxes = loadRequests.stream()
                 .map(load -> new LoadDistribution(load))
                 .map(distribution -> Flux.range(1, distribution.getTicks())
-                        .doFirst(() -> log.info(" ***** Starting load distribution: ArrivalRate={}, DurationSeconds={} *****", distribution.getArrivalRate(), distribution.getDurationSeconds()))
                         .limitRate(1)
                         .delayElements(Duration.ofMillis(distribution.getDelayMillis()))
                         .map(idx -> Flux.range(1, distribution.getMessagesForTick(idx)))
                         .flatMap(idx -> idx)
                         .map(idx -> generateRequest())
                         .map(req -> makeRequest(webClient, req))
-                        .flatMap(resp -> resp))
+                        .flatMap(resp -> resp)
+                        .doOnComplete(() -> log.info(" ***** Done with load distribution: ArrivalRate={}, DurationSeconds={} *****", distribution.getArrivalRate(), distribution.getDurationSeconds()))
+                )
                 .collect(Collectors.toList());
 
-        Flux<TurnResponse> main = fluxes.get(0);
-        for (int i = 1; i < fluxes.size(); i++) {
-            main = main.thenMany(fluxes.get(i));
-        }
 
-        main.parallel()
+        Flux.concat(fluxes)
+                .parallel()
                 .runOn(Schedulers.boundedElastic())
                 .subscribe(resp -> collectStats(counter, resp));
     }

@@ -1,8 +1,8 @@
 #!/bin/bash
 
 LOAD_HOST=$1
-if [[ -z $LOAD_HOST ]]; then
-    LOAD_HOST = "localhost"
+if [[ -z "$LOAD_HOST" ]]; then
+    LOAD_HOST="localhost"
 fi
 
 LOAD='[
