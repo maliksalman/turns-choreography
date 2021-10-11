@@ -35,10 +35,12 @@ This will start few services:
 
 For **asynchronous messaging**, the apps will pick between RabbitMQ or Apache Kafka depending on which spring profile is in effect. For temporary **fast storage** and **distributed locking**, the apps will pick between Redis or Apache Geode depending on the spring profiles in effect. The following combinations are possible:
 
-- RabbitMQ + Apache Geode
-- RabbitMQ + Redis
-- Apache Kafka + Apache Geode
-- Apache Kafka + Redis
+| | Apache Kafka | RabbitMQ | Spring Profiles to activate |
+| ---- | :------: | :-----: | ------- |
+| Apache Geode | | x | `geode` |
+| Apache Geode | x | | `geode,kafka` |
+| Redis | | x | `redis` |
+| Redis | x | | `redis,kafka` |
 
 The username/password to access this RabbitMQ dashboard instance would be `guest`/`guest`
 
@@ -50,9 +52,9 @@ By default, the following ports are used by the services:
 | Apache Kafka | `2181`, `9092` | There is no admin UI |
 | Apache Geode - Locator | `10334` | There is no admin UI, can do admin activities using `gfsh` command within the container |
 | Apache Geode - Server | `40404` | There is no admin UI |
-| Redis | `6379` | There is no admin UI, can use `redis-cli` within the container to perform admin activities |
+| Redis | `6379` | There is no admin UI, can use `redis-cli` command within the container to perform admin activities |
 | Prometheus | `9090` | Admin dashboard with `GET /` |
-| Grafana | `3000` | Dashboards with `GET /`. Don't require authentication unless you want to change/create a dashboard - use `admin`/`admin` as username/password. There are couple of dashboards built in.
+| Grafana | `3000` | Dashboards with `GET /`. Does not require authentication unless you want to change/create a dashboard - use `admin`/`admin` as username/password. There are a couple of dashboards built in.
 
 ### Start the services
 
