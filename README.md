@@ -39,10 +39,8 @@ For **asynchronous messaging**, the apps will pick between RabbitMQ or Apache Ka
 | ---- | :------: | :-----: | ------- |
 | Apache Geode | | x | `geode` |
 | Apache Geode | x | | `geode,kafka` |
-| Redis | | x | `redis` |
-| Redis | x | | `redis,kafka` |
-
-The username/password to access this RabbitMQ dashboard instance would be `guest`/`guest`
+| Redis | | x | `redisson` |
+| Redis | x | | `redisson,kafka` |
 
 By default, the following ports are used by the services:
 
@@ -56,29 +54,37 @@ By default, the following ports are used by the services:
 | Prometheus | `9090` | Admin dashboard with `GET /` |
 | Grafana | `3000` | Dashboards with `GET /`. Does not require authentication unless you want to change/create a dashboard - use `admin`/`admin` as username/password. There are a couple of dashboards built in.
 
-### Start the services
+### Start the apps
+
+Assuming we want to use Apache Kafka for synchronous messaging and Apache geode for fast storage, we would issue the following commands to start the apps:
 
 API:
 
 ```bash
 cd api
-./gradlew bootRun
+SPRING_PROFILES_ACTIVE=geode,kafka ./gradlew bootRun
 ```
 
 Choreographer:
 
 ```bash
 cd choreographer
-./gradlew bootRun
+SPRING_PROFILES_ACTIVE=geode,kafka ./gradlew bootRun
 ```
 
 Workers:
 
 ```bash
 cd worker
-SPRING_PROFILES_ACTIVE=breathe ./gradlew bootRun
-SPRING_PROFILES_ACTIVE=think ./gradlew bootRun
-SPRING_PROFILES_ACTIVE=act ./gradlew bootRun
-SPRING_PROFILES_ACTIVE=react ./gradlew bootRun
+SPRING_PROFILES_ACTIVE=kafka,forward ./gradlew bootRun
+SPRING_PROFILES_ACTIVE=kafka,back    ./gradlew bootRun
+SPRING_PROFILES_ACTIVE=kafka,left    ./gradlew bootRun
+SPRING_PROFILES_ACTIVE=kafka,right   ./gradlew bootRun
 ```
 
+Requester:
+
+```bash
+cd requester
+./gradlew bootRun
+```

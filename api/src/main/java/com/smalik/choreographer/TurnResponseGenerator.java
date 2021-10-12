@@ -29,14 +29,17 @@ public class TurnResponseGenerator {
     private final Metrics metrics;
 
     private Timer generateResponseTimer;
+    private Timer generateTimeoutResponseTimer;
 
     @PostConstruct
     public void init() {
-        generateResponseTimer = metrics.createTimer("turns.generate-response");
+        generateResponseTimer = metrics.createTimer("turns.generate-response", "timeout", Boolean.FALSE.toString());
+        generateTimeoutResponseTimer = metrics.createTimer("turns.generate-response", "timeout", Boolean.TRUE.toString());
     }
 
     public TurnResponse generateTurnResponse(MoveInitiator moveInitiator, TurnRequest request, boolean timeout) {
-        return generateResponseTimer.record(() -> {
+        Timer timer = timeout ? generateTimeoutResponseTimer : generateResponseTimer;
+        return timer.record(() -> {
 
             TurnResponse response = TurnResponse.builder()
                     .playerId(request.getPlayerId())
@@ -63,7 +66,9 @@ public class TurnResponseGenerator {
             requests.removeRequest(request.getTurnId());
 
             // only release lock if no other requests are waiting for this player
+            // the turn-completed listener will assume that the lock is still held
             if (requests.findRequests(request.getPlayerId()).isEmpty()) {
+                log.info("Unlocking: Player={}, Turn={}", request.getPlayerId(), request.getTurnId());
                 lockService.unlock(request.getPlayerId());
             }
 
