@@ -13,3 +13,16 @@ spring:
           destination: ${spring.application.name}-requested
         processor-out-0:
           destination: ${spring.application.name}-completed
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info,health,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: worker-${spring.application.name}
+      instance: worker-${spring.application.name}-0
